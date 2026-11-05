@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TribeMap Guide</title>
+<link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
+<style>
+  :root { --ink: #22231f; --muted: #6b6b63; --line: #e2e0d8; --accent: #1f5fa8; --panel: #fbfaf6; --bg: #f3f1ea;
+          --tip: #fff6d9; --tip-line: #ecd68a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line);
+               padding-bottom: 12px; }
+  header.top h1 { margin: 0; font-size: 28px; }
+  header.top a.open { margin-left: auto; background: var(--accent); color: #fff; padding: 6px 14px; border-radius: 6px;
+                      text-decoration: none; font-weight: 600; }
+  h2 { margin: 40px 0 8px; font-size: 22px; }
+  h3 { margin: 28px 0 6px; font-size: 18px; }
+  a { color: var(--accent); }
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 20px; margin: 20px 0; }
+  nav.toc ol { margin: 4px 0; padding-left: 20px; }
+  figure { margin: 16px 0; text-align: center; }
+  figure img { display: block; margin: 0 auto; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px;
+               background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  figure.small img { max-width: 360px; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .tip { background: var(--tip); border: 1px solid var(--tip-line); border-radius: 6px; padding: 10px 14px; margin: 16px 0; }
+  .muted { color: var(--muted); }
+  kbd, .btn { display: inline-block; border: 1px solid #c9c6bb; border-radius: 5px; padding: 0 6px; background: #fff;
+              font: 14px/1.5 system-ui, sans-serif; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 8px 0; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  footer { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; color: var(--muted); }
+  @media (max-width: 600px) { figure.small img { max-width: 100%; } header.top a.open { margin-left: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>TribeMap Guide</h1>
+  <a class="open" href="../">Open TribeMap</a>
+</header>
+
+<p>TribeMap turns your TribeNet turn reports into a map you can explore, and helps you plan each turn's moves and
+scouting with the movement points worked out for you. It runs entirely in your web browser: your reports and plans
+stay on your computer and are never sent anywhere.</p>
+
+<p class="muted">The pictures in this guide use made-up reports for an imaginary clan, 0999, on map sheet ZZ, which
+doesn't exist in the game.</p>
+
+<nav class="toc">
+  <b>Contents</b>
+  <ol>
+    <li><a href="#start">Getting started: your first map in five minutes</a></li>
+    <li><a href="#explore">Finding your way around the map</a></li>
+    <li><a href="#plan">Planning a turn: moving a tribe</a></li>
+    <li><a href="#scouts">Planning scouts</a></li>
+    <li><a href="#orders">Getting your plan into your orders</a></li>
+    <li><a href="#history">History: where your units have been</a></li>
+    <li><a href="#data">Keeping your data safe</a></li>
+    <li><a href="#reference">Reference: buttons, layers and legend</a></li>
+  </ol>
+</nav>
+
+<h2 id="start">1. Getting started: your first map in five minutes</h2>
+
+<h3>Open TribeMap</h3>
+<p>Go to <a href="../">TribeMap</a>. The first time, it takes a little while to start (it downloads the engine that
+runs in your browser); after that it opens quickly. You'll see an empty map: nothing is imported yet.</p>
+<figure><img src="img/start.png" alt="TribeMap before any reports are imported: the sidebar on the left and an empty map"
+  loading="lazy"><figcaption>A fresh TribeMap, ready for your first report.</figcaption></figure>
+
+<h3>Import your turn reports</h3>
+<p>Your turn results arrive by email from the GM as a Word file, named like <code>0999_901_01_Results.docx</code>.
+Save them somewhere on your computer, then bring them in with one of the buttons at the top of the sidebar:</p>
+<figure class="small"><img src="img/header.png" alt="The Import, Folder and Export Map buttons at the top of the sidebar"
+  loading="lazy"></figure>
+<ul>
+  <li><span class="btn">Import (.docx/.wxx)</span> picks one report, or several at once. You can also drag report files onto the page.</li>
+  <li>Both also take <b>.wxx maps</b> made with Clan Cartographer or Worldographer, for example one an ally sent you.
+    Their hexes are added to your map as terrain known; your own reports always win where they disagree.</li>
+  <li><span class="btn">Folder (.docx/.wxx)</span> picks a whole folder. TribeMap looks through it and every folder inside it for
+    files with <b>Results</b> in the name and for <code>.wxx</code> maps, and leaves everything else (orders, Tribe
+    News) alone.</li>
+</ul>
+<p>Reports are imported straight away, oldest turn first, whatever order you pick them in. TribeMap reads your clan
+number from the first report, so there's nothing to set up. The summary shows what each report added:</p>
+<figure class="small"><img src="img/import.png" alt="The import summary listing three reports and what each added"
+  loading="lazy"><figcaption>Three turns imported. A line TribeMap couldn't place on the map is listed so you can
+  check it; names such as settlements are kept as special hexes.</figcaption></figure>
+<div class="tip">Importing the same report twice does no harm: it's recognised and skipped. When a new turn's report
+comes in, just import it; the plan for the turn it replaces is archived and a fresh plan is started.</div>
+
+<h3>That's it</h3>
+<p>Close the summary and your map is there: every hex your tribes and scouts have seen, with its terrain, and your
+units' current positions.</p>
+<figure><img src="img/overview.png" alt="The map after importing: coloured terrain hexes, the tribe and element marked in black"
+  loading="lazy"><figcaption>The map after three turns. Black outlines mark your units (here tribe 0999 and its element
+  0999e1); gold outlines mark hexes with a find or something special.</figcaption></figure>
+
+<h2 id="explore">2. Finding your way around the map</h2>
+<ul>
+  <li><b>Move around</b> by dragging the map; <b>zoom</b> with the mouse wheel or the <span class="btn">+</span>
+    <span class="btn">−</span> buttons. <span class="btn">Fit</span> shows everything you know;
+    <span class="btn">World</span> zooms out to the whole game world.</li>
+  <li><b>Go to</b>: type a hex (<code>ZZ 1008</code>) or one of your units (<code>0999</code>) in the box under
+    <i>Plan</i> and press <kbd>Enter</kbd>.</li>
+  <li><b>Click a hex</b> to see everything known about it: terrain, how well it's been scouted, when you last saw it,
+    resources found there, and its history turn by turn.</li>
+</ul>
+<figure class="small"><img src="img/hex.png" alt="The Hex panel for ZZ 1107: fully scouted conifer hills with copper ore"
+  loading="lazy"><figcaption>The Hex panel. <i>Fully scouted</i> means scouts entered the hex, so its resources are
+  known too.</figcaption></figure>
+<p><b>Map as of</b> (at the top of the sidebar) replays the map as it was at an earlier turn.</p>
+<p><b>Showing</b> (the box at the top left of the map) picks which tribe you're working with. A tribe includes its
+elements; the others' scout routes are faded so one tribe's plan is easy to read.</p>
+
+<h2 id="plan">3. Planning a turn: moving a tribe</h2>
+<p>Each import starts an empty plan for the next turn. Choose it in the <b>Plan</b> list (it's named after the turn,
+e.g. <code>901-04</code>). You can make alternative plans for the same turn with <i>+ New plan…</i> and compare them.</p>
+<ol>
+  <li>Select the tribe or element in <b>Showing</b>, then click <span class="btn">+ Unit move</span>. The unit is
+    already filled in; the <b>Unit</b> list has all your tribes and elements (and <i>Other…</i> for one created this turn).</li>
+  <li>Click the direction buttons (<span class="btn">N</span>, <span class="btn">NE</span>, …), or click hexes on the
+    map. Clicking a hex further away adds a straight line of steps to it.</li>
+  <li>The table under the buttons shows each step: the terrain, its movement-point (MP) cost and what's left. Numbers
+    on the map show what the next step in each direction would cost.</li>
+  <li>Click <span class="btn">Save route</span>.</li>
+</ol>
+<figure><img src="img/move.png" alt="Planning a move: the route editor on the left, the route drawn in pink on the map with step costs"
+  loading="lazy"><figcaption>Tribe 0999 moving S then SE: 3 MP used of 18 so far. The pink route is the one being
+  edited; the small circles show what each next step would cost.</figcaption></figure>
+<figure class="small"><img src="img/move-editor.png" alt="The route editor: unit, kind, mover, direction buttons and the step table"
+  loading="lazy"><figcaption>The route editor. A cost with <b>*</b> is a guess: that terrain hasn't been seen yet, so
+  3 MP is assumed.</figcaption></figure>
+<div class="tip"><b>Mounted units:</b> a tribe on foot has 18 MP a turn; one with a horse for everyone has 27. Tick
+<b>Usually mounted</b> once for a tribe or element that always rides, and its moves use 27 from then on.<br>
+<b>Weather:</b> the costs are for fair weather. Poor weather can cost more, so leave some slack.</div>
+
+<h2 id="scouts">4. Planning scouts</h2>
+<p>Scouts leave from where the tribe ends its move. Add them one at a time with <span class="btn">+ Scout party</span>
+(the same editor as a move), or let TribeMap suggest routes with <span class="btn">Auto-plan … scouts</span>: it fills
+the tribe's free scout parties with routes that reach the most unknown ground, and keeps any you've already drawn.</p>
+<figure><img src="img/scouts.png" alt="Eight scout routes fanning out from the tribe's planned position, each in its own colour"
+  loading="lazy"><figcaption>Auto-planned scouts for 0999: one colour per party, each labelled with its party number.
+  Grey hexes are ones this plan will scout for the first time.</figcaption></figure>
+<p>The <b>Plan</b> panel lists every route, with how far it gets and the MP it uses. Use <span class="btn">Edit</span>
+to change a route, or ✕ to remove it. Routes such as <i>FRL</i> follow a river or coast: TribeMap shows which way it
+expects them to go.</p>
+<figure class="small"><img src="img/plan-table.png" alt="The plan table: the unit move and eight scout parties with orders, end hex and MP"
+  loading="lazy"><figcaption>The plan: how many hexes it enters and how many are new, then each route.</figcaption></figure>
+
+<h2 id="orders">5. Getting your plan into your orders</h2>
+<p>Click <span class="btn">Export paste-in</span> under the plan table. It downloads a small Excel workbook laid out
+like the orders spreadsheet's movement and scouting sheets: copy its rows into your orders file, check them, and send
+your orders to the GM as usual.</p>
+<div class="tip">TribeMap never sends anything to the GM and never changes your orders file: you stay in control of
+what you submit.</div>
+
+<h2 id="history">6. History: where your units have been</h2>
+<p>Once you've imported two or more turns, tick <b>Show where units have been</b> in the History section. Each tribe
+and element gets a track of its moves, with a dot where each turn ended (zoom in to see the turn written beside it).
+Drag the two handles to choose the turns shown.</p>
+<figure class="small"><img src="img/history-box.png" alt="The History section: a checkbox and a slider with two handles"
+  loading="lazy"></figure>
+<figure><img src="img/history.png" alt="Two tracks on the map: the tribe heading north and the element heading south over three turns"
+  loading="lazy"><figcaption>Three turns of 0999 and 0999e1. The open circle is where the range starts.</figcaption></figure>
+
+<h2 id="data">7. Keeping your data safe</h2>
+<p>Everything you import and plan is kept <b>only in this browser on this computer</b>. Clearing your browser's site
+data, or using a different browser or computer, starts you with an empty map. So:</p>
+<ul>
+  <li><span class="btn">Save data</span> downloads everything (map, plans, settings) as one <code>.zip</code> file.
+    Do it now and then; TribeMap reminds you when it hasn't been saved for a while.</li>
+  <li><span class="btn">Open data…</span> loads a saved file, replacing what's in this browser (click it twice to
+    confirm). Use it to restore a backup or to carry on on another computer.</li>
+</ul>
+<figure class="small"><img src="img/data.png" alt="The TribeMap Data section with Save data and Open data buttons and a reminder"
+  loading="lazy"></figure>
+<p>You can also just keep your report files: importing them all again (<span class="btn">Folder (.docx/.wxx)</span>) rebuilds the
+map, though not your plans.</p>
+
+<h2 id="reference">8. Reference: buttons, layers and legend</h2>
+<h3>Buttons</h3>
+<table>
+  <tr><th>Button</th><th>What it does</th></tr>
+  <tr><td><span class="btn">Import (.docx/.wxx)</span></td><td>Import one or more turn reports (.docx, or a .txt copy) or .wxx maps.</td></tr>
+  <tr><td><span class="btn">Folder (.docx/.wxx)</span></td><td>Import every report and .wxx map in a folder and the folders inside it.</td></tr>
+  <tr><td><span class="btn">Export Map (.wxx)</span></td><td>Download the map as shown as a <code>.wxx</code> file for Clan
+    Cartographer or Worldographer, e.g. to share with an ally. Your units and plans are never included.</td></tr>
+  <tr><td><span class="btn">+ Unit move</span> <span class="btn">+ Scout party</span></td><td>Draw a route in the
+    current plan.</td></tr>
+  <tr><td><span class="btn">Auto-plan … scouts</span></td><td>Fill the selected tribe's free scout parties with
+    suggested routes.</td></tr>
+  <tr><td><span class="btn">Export paste-in</span></td><td>Download the plan as a workbook to paste into your
+    orders.</td></tr>
+  <tr><td><span class="btn">Save data</span> <span class="btn">Open data…</span></td><td>Back up everything, or load
+    a backup.</td></tr>
+</table>
+
+<h3>Layers</h3>
+<figure class="small"><img src="img/layers.png" alt="The Layers checkboxes" loading="lazy"></figure>
+<table>
+  <tr><th>Layer</th><th>Shows</th></tr>
+  <tr><td>Terrain, Terrain icons</td><td>Each hex's terrain as a colour and a small picture.</td></tr>
+  <tr><td>Rivers &amp; fords</td><td>Rivers along hex edges (blue) and known fords.</td></tr>
+  <tr><td>Hex labels</td><td>Each hex's map reference.</td></tr>
+  <tr><td>Resources</td><td>Finds (ore, salt…) and special hexes such as settlements, outlined in gold.</td></tr>
+  <tr><td>Our units</td><td>Where your tribes and elements are.</td></tr>
+  <tr><td>Only glimpsed</td><td>Hatching on hexes seen only from next door or passed through: the terrain is known
+    but nobody has checked them for resources.</td></tr>
+  <tr><td>Fog (age)</td><td>Hexes scouted long ago fade to grey: worth another look.</td></tr>
+  <tr><td>Map sheets</td><td>The borders between the game's map sheets.</td></tr>
+  <tr><td>World grid</td><td>The whole world when zoomed out, tinted by climate.</td></tr>
+  <tr><td>Plan</td><td>The selected plan's routes.</td></tr>
+  <tr><td>Old map style</td><td>Draws your map like an old parchment chart, with hand-drawn terrain and a title
+    cartouche. Just for the look; switch it off to plan.</td></tr>
+</table>
+<p>Click the <b>Layers</b>, <b>History</b> or <b>Legend</b> heading to fold that section away (and again to open it).</p>
+
+<h3>Legend</h3>
+<p>The legend at the bottom of the sidebar lists the terrain on your map with its MP cost, then the other marks.</p>
+<figure class="small"><img src="img/legend.png" alt="The legend: terrain types with MP costs, then what the shading and outlines mean"
+  loading="lazy"></figure>
+
+<footer>
+  TribeMap is free and open source (MIT licence), made by
+  <a href="https://github.com/TristanHM">TristanHM</a>. Source code and issues:
+  <a href="https://github.com/TristanHM/TribeMap">github.com/TristanHM/TribeMap</a>.
+  TribeMap is a fan-made tool and isn't part of TribeNet.
+</footer>
+</div>
+</body>
+</html>

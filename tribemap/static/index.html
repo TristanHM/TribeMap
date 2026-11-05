@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TribeMap</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<aside id="side">
+  <header>
+    <h1>TribeMap</h1>
+    <span id="clan" class="muted"></span>
+    <a id="guideLink" class="guide" href="guide/" target="_blank" rel="noopener" title="How to use TribeMap: a step-by-step guide" hidden>Guide</a>
+    <div class="hbtns">
+      <button id="importBtn" title="Import turn reports (.docx) from the GM's emails, or .wxx maps: pick one or several, or drop them on the page">Import (.docx/.wxx)</button>
+      <button id="importDirBtn" title="Import every turn report (files named like 0999_906_05_Results.docx) and .wxx map in a folder and the folders inside it">Folder (.docx/.wxx)</button>
+      <button id="exportWxx" title="Save the map as shown as a .wxx file that Clan Cartographer and Worldographer can open (known hexes, plus others' info, rivers and resources if those layers are on; never our units or plans)">Export Map (.wxx)</button>
+    </div>
+    <input type="file" id="importFile" accept=".docx,.txt,.wxx" multiple hidden>
+    <input type="file" id="importDir" webkitdirectory hidden>
+  </header>
+
+  <section id="importBox" hidden>
+    <h2>Import report</h2>
+    <div id="importInfo"></div>
+    <div class="row"><button id="importDone">Close</button></div>
+  </section>
+
+  <section>
+    <label>Map as of
+      <select id="asof"></select>
+    </label>
+    <label>Plan
+      <select id="plan"></select>
+    </label>
+    <form id="newPlan" hidden>
+      <div class="row">
+        <label class="inline">Turn <input id="newPlanTurn" placeholder="906-05" size="7"></label>
+        <label class="inline">Name <input id="newPlanName" placeholder="B" size="6"></label>
+      </div>
+      <label class="inline check"><input type="checkbox" id="newPlanCopy" checked> Start as a copy of <b id="newPlanFrom"></b></label>
+      <div class="row">
+        <button type="submit" class="primary">Create plan</button>
+        <button type="button" id="newPlanCancel">Cancel</button>
+      </div>
+      <div id="newPlanErr" class="warn"></div>
+    </form>
+    <form id="goto">
+      <input id="gotoText" placeholder="Go to hex or unit (QB 1016, 1999)" autocomplete="off">
+    </form>
+  </section>
+
+  <section>
+    <details id="layersFold" class="fold" open>
+      <summary><h2>Layers</h2></summary>
+      <div id="layers" class="layers"></div>
+    </details>
+  </section>
+
+  <section id="historyBox" hidden>
+    <details id="historyFold" class="fold" open>
+      <summary><h2>History</h2></summary>
+      <label class="inline check"><input type="checkbox" id="histOn"> Show where units have been</label>
+      <div class="dual" title="Drag either end to choose the turns shown">
+        <input type="range" id="histFrom" min="0" step="1" aria-label="From turn">
+        <input type="range" id="histTo" min="0" step="1" aria-label="To turn">
+      </div>
+      <div id="histLabel" class="muted histlabel"></div>
+    </details>
+  </section>
+
+  <section id="editBox" hidden>
+    <h2>Edit plan <span id="editTurn"></span></h2>
+    <div id="planMsg" class="msg" hidden></div>
+    <div id="editIdle">
+      <button id="newMove">+ Unit move</button>
+      <button id="newScout">+ Scout party</button>
+      <button id="autoScout" title="Fill the selected tribe or element's free scout parties with the routes that reveal the most new hexes and glimpses (or use Auto on a unit's move below)">Auto-plan scouts</button>
+      <p class="muted">Or use Edit on a route in the table below.</p>
+    </div>
+    <form id="editForm" hidden autocomplete="off">
+      <div class="grid3">
+        <label>Unit <select id="eUnitPick"></select><input id="eUnit" size="7" placeholder="1999" hidden></label>
+        <label>Kind <select id="eKind"><option value="move">Move</option><option value="scout">Scout</option></select></label>
+        <label id="ePartyL">Party <select id="eParty"></select></label>
+      </div>
+      <div class="grid3">
+        <label>Mover <select id="eMover"></select></label>
+        <label id="eUsualL" class="span2" title="Saved for this unit: every move of it, this turn and later, is simulated mounted unless you pick otherwise"><input type="checkbox" id="eUsual"> Usually mounted</label>
+        <label class="span2">Start <input id="eStart" placeholder="auto" size="8">
+          <button type="button" id="ePick" title="Click a hex on the map to set the start">Pick</button></label>
+      </div>
+      <div class="grid3" id="eScoutRow">
+        <label>Scouts <input id="eScouts" type="number" min="1" value="2"></label>
+        <label>Horses <input id="eHorses" type="number" min="0" value="2"></label>
+        <label>Mission <select id="eMission"><option>PATROL</option><option>LOCATE</option><option>RAID</option><option>SPY</option></select></label>
+      </div>
+      <label class="full">Orders <input id="eOrders" placeholder="click hexes on the map, or type N,NE,NW"></label>
+      <div class="pad">
+        <button type="button" data-dir="NW">NW</button><button type="button" data-dir="N">N</button><button type="button" data-dir="NE">NE</button>
+        <button type="button" data-dir="SW">SW</button><button type="button" data-dir="S">S</button><button type="button" data-dir="SE">SE</button>
+      </div>
+      <div class="row">
+        <select id="eSpecial">
+          <option value="">Follow / to limit…</option>
+          <option>FRR</option><option>FRL</option><option>FCR</option><option>FCL</option><option>FLR</option><option>FLL</option>
+          <option>FMR</option><option>FML</option><option>FOR</option><option>FOL</option>
+          <option>NL</option><option>NEL</option><option>SEL</option><option>SL</option><option>SWL</option><option>NWL</option>
+        </select>
+        <button type="button" id="eUndo" title="Remove the last order (Backspace)">Undo</button>
+        <button type="button" id="eClear">Clear</button>
+      </div>
+      <div id="eStatus"></div>
+      <div id="eSteps"></div>
+      <div class="row">
+        <button type="submit" class="primary">Save route</button>
+        <button type="button" id="eCancel">Cancel</button>
+        <button type="button" id="eDelete" class="danger" hidden>Delete</button>
+      </div>
+      <p class="muted">Click hexes to add steps (a far hex adds a straight line to it). Numbers on the map show the
+        MP each next step would cost.</p>
+    </form>
+  </section>
+
+  <section id="detailBox">
+    <h2>Hex</h2>
+    <div id="detail" class="muted">Click a hex for everything known about it.</div>
+  </section>
+
+  <section id="planBox" hidden>
+    <h2>Plan <span id="planTitle"></span>
+      <button type="button" id="deletePlan" class="rowbtn danger" title="Delete this plan (two clicks)">Delete plan</button></h2>
+    <div id="planSummary"></div>
+  </section>
+
+  <section>
+    <h2>TribeMap Data</h2>
+    <div class="row">
+      <button id="projectSave" title="Download everything (map data, plans, contacts, mounted units, corrections) as one file: a backup, or to move to another copy of TribeMap">Save data</button>
+      <button id="projectOpen" hidden title="Replace everything here with a TribeMap data file saved before">Open data…</button>
+      <input type="file" id="projectFile" accept=".zip" hidden>
+    </div>
+    <p id="projectMsg" class="muted" hidden></p>
+    <p id="backupNote" class="muted" hidden></p>
+  </section>
+
+  <section>
+    <details id="legendFold" class="fold" open>
+      <summary><h2>Legend</h2></summary>
+      <div id="legend"></div>
+    </details>
+  </section>
+</aside>
+
+<main id="mapWrap">
+  <div id="parchment" aria-hidden="true"><div id="parchmentSheet"></div></div>
+  <svg id="map" xmlns="http://www.w3.org/2000/svg">
+    <defs id="iconDefs"></defs>
+    <defs>
+      <pattern id="hatch" patternUnits="userSpaceOnUse" width="0.22" height="0.22" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="0.22" stroke="#ffffff" stroke-opacity="0.75" stroke-width="0.08"/>
+        <line x1="0.11" y1="0" x2="0.11" y2="0.22" stroke="#000000" stroke-opacity="0.18" stroke-width="0.03"/>
+      </pattern>
+      <!-- old map style: rounded regions (swamps, lakes) from their hexes: blurred, thresholded, a little wobble -->
+      <filter id="blobFill" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="0.22" result="b"/>
+        <feComponentTransfer in="b" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="13" result="n"/>
+        <feDisplacementMap in="t" in2="n" scale="0.32" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+        <feFlood flood-color="#fff"/><feComposite in2="shape" operator="in"/>
+      </filter>
+      <filter id="blobCut" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="0.22" result="b"/>
+        <feComponentTransfer in="b" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="13" result="n"/>
+        <feDisplacementMap in="t" in2="n" scale="0.32" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+        <feFlood flood-color="#000"/><feComposite in2="shape" operator="in"/>
+      </filter>
+      <filter id="blobEdge" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="0.22" result="b"/>
+        <feComponentTransfer in="b" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="13" result="n"/>
+        <feDisplacementMap in="t" in2="n" scale="0.32" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+        <feMorphology in="shape" operator="dilate" radius="0.03" result="d"/>
+        <feComposite in="d" in2="shape" operator="out" result="edge"/>
+        <feFlood flood-color="#17110a"/><feComposite in2="edge" operator="in"/>
+      </filter>
+      <filter id="lakeEdge" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="0.22" result="b"/>
+        <feComponentTransfer in="b" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="13" result="n"/>
+        <feDisplacementMap in="t" in2="n" scale="0.32" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+        <feMorphology in="shape" operator="dilate" radius="0.035" result="d"/>
+        <feComposite in="d" in2="shape" operator="out" result="edge"/>
+        <feFlood flood-color="#17110a"/><feComposite in2="edge" operator="in" result="shore"/>
+        <feMorphology in="shape" operator="erode" radius="0.14" result="e1"/>
+        <feMorphology in="shape" operator="erode" radius="0.165" result="e2"/>
+        <feComposite in="e1" in2="e2" operator="out" result="r1"/>
+        <feFlood flood-color="#17110a" flood-opacity="0.7"/><feComposite in2="r1" operator="in" result="ring1"/>
+        <feMorphology in="shape" operator="erode" radius="0.3" result="e3"/>
+        <feMorphology in="shape" operator="erode" radius="0.322" result="e4"/>
+        <feComposite in="e3" in2="e4" operator="out" result="r2"/>
+        <feFlood flood-color="#17110a" flood-opacity="0.45"/><feComposite in2="r2" operator="in" result="ring2"/>
+        <feMerge><feMergeNode in="ring2"/><feMergeNode in="ring1"/><feMergeNode in="shore"/></feMerge>
+      </filter>
+      <!-- fine cross-hatching for shading ink symbols (e.g. shrubs) -->
+      <pattern id="xhatch" patternUnits="userSpaceOnUse" width="0.035" height="0.035">
+        <path d="M0,0 L0.035,0.035 M0.035,0 L0,0.035" stroke="#17110a" stroke-width="0.007"/>
+      </pattern>
+      <pattern id="marshPat" patternUnits="userSpaceOnUse" width="0.34" height="0.2">
+        <path d="M0.03,0.06 L0.15,0.06 M0.2,0.15 L0.31,0.15" stroke="#17110a" stroke-width="0.02" stroke-linecap="round"/>
+      </pattern>
+      <!-- old map style: the ice sheet's wind ridges and cracks -->
+      <pattern id="icePat" patternUnits="userSpaceOnUse" width="0.52" height="0.3">
+        <path d="M0.04,0.08 L0.2,0.06 M0.3,0.21 L0.46,0.19 M0.2,0.13 L0.25,0.16 L0.31,0.14" stroke="#17110a" stroke-width="0.014"
+              stroke-linecap="round" stroke-opacity="0.75" fill="none"/>
+      </pattern>
+      <!-- old map style: a slight hand-drawn wobble on the rivers -->
+      <filter id="riverWobble" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="2" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="0.2" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.5" markerHeight="3.5"
+              orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#111"/>
+      </marker>
+    </defs>
+    <g id="gWorld" pointer-events="none"></g>
+    <g id="gOld" pointer-events="none"></g>
+    <g id="gHex"></g>
+    <!-- everything drawn over the hexes lets clicks through to them -->
+    <g id="gOver" pointer-events="none">
+      <g id="gFog"></g>
+      <g id="gPlanFill"></g>
+      <g id="gSheetNames"></g>
+      <g id="gText"></g>
+      <g id="gSides"></g>
+      <g id="gBorders"></g>
+      <g id="gPlan"></g>
+      <g id="gEdit"></g>
+      <g id="gHistory"></g>
+      <g id="gUnits"></g>
+      <g id="gPeople"></g>
+      <g id="gSel"></g>
+    </g>
+  </svg>
+  <div id="compass" aria-hidden="true">
+    <!-- a hand-inked 16-point compass rose (generated; north in red under a fleur-de-lis) -->
+    <svg viewBox="-62 -72 124 128" width="118" height="122">
+      <circle r="44" fill="#e9cf8a" fill-opacity="0.35" stroke="#17110a" stroke-width="1.6"/>
+      <circle r="40.5" fill="none" stroke="#17110a" stroke-width="0.6"/>
+      <path d="M0.00,-38.50 L0.00,-44.00 M7.90,-39.72 L8.58,-43.15 M14.73,-35.57 L16.84,-40.65 M22.50,-33.67 L24.45,-36.58 M27.22,-27.22 L31.11,-31.11 M33.67,-22.50 L36.58,-24.45 M35.57,-14.73 L40.65,-16.84 M39.72,-7.90 L43.15,-8.58 M38.50,-0.00 L44.00,-0.00 M39.72,7.90 L43.15,8.58 M35.57,14.73 L40.65,16.84 M33.67,22.50 L36.58,24.45 M27.22,27.22 L31.11,31.11 M22.50,33.67 L24.45,36.58 M14.73,35.57 L16.84,40.65 M7.90,39.72 L8.58,43.15 M0.00,38.50 L0.00,44.00 M-7.90,39.72 L-8.58,43.15 M-14.73,35.57 L-16.84,40.65 M-22.50,33.67 L-24.45,36.58 M-27.22,27.22 L-31.11,31.11 M-33.67,22.50 L-36.58,24.45 M-35.57,14.73 L-40.65,16.84 M-39.72,7.90 L-43.15,8.58 M-38.50,0.00 L-44.00,0.00 M-39.72,-7.90 L-43.15,-8.58 M-35.57,-14.73 L-40.65,-16.84 M-33.67,-22.50 L-36.58,-24.45 M-27.22,-27.22 L-31.11,-31.11 M-22.50,-33.67 L-24.45,-36.58 M-14.73,-35.57 L-16.84,-40.65 M-7.90,-39.72 L-8.58,-43.15" stroke="#17110a" stroke-width="0.6"/>
+      <circle r="24" fill="none" stroke="#17110a" stroke-width="0.5"/>
+      <polygon points="11.48,-27.72 -2.96,-1.22 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="11.48,-27.72 0,0 2.96,1.22" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="27.72,-11.48 -1.22,-2.96 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="27.72,-11.48 0,0 1.22,2.96" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="27.72,11.48 1.22,-2.96 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="27.72,11.48 0,0 -1.22,2.96" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="11.48,27.72 2.96,-1.22 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="11.48,27.72 0,0 -2.96,1.22" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-11.48,27.72 2.96,1.22 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-11.48,27.72 0,0 -2.96,-1.22" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-27.72,11.48 1.22,2.96 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-27.72,11.48 0,0 -1.22,-2.96" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-27.72,-11.48 -1.22,2.96 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-27.72,-11.48 0,0 1.22,-2.96" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-11.48,-27.72 -2.96,1.22 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-11.48,-27.72 0,0 2.96,-1.22" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="25.46,-25.46 -3.39,-3.39 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="25.46,-25.46 0,0 3.39,3.39" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="25.46,25.46 3.39,-3.39 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="25.46,25.46 0,0 -3.39,3.39" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-25.46,25.46 3.39,3.39 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-25.46,25.46 0,0 -3.39,-3.39" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-25.46,-25.46 -3.39,3.39 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-25.46,-25.46 0,0 3.39,-3.39" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="0.00,-52.00 -6.50,-0.00 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="0.00,-52.00 0,0 6.50,-0.00" fill="#b01e16" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="47.00,-0.00 0.00,-6.50 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="47.00,-0.00 0,0 0.00,6.50" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="0.00,47.00 6.50,-0.00 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="0.00,47.00 0,0 -6.50,0.00" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <polygon points="-47.00,0.00 0.00,6.50 0,0" fill="#e9cf8a" stroke="#17110a" stroke-width="0.6"/><polygon points="-47.00,0.00 0,0 -0.00,-6.50" fill="#17110a" stroke="#17110a" stroke-width="0.6"/>
+      <circle r="3.6" fill="#e9cf8a" stroke="#17110a" stroke-width="0.8"/><circle r="1.4" fill="#17110a"/>
+      <g transform="translate(0,-60)" fill="#b01e16" stroke="#17110a" stroke-width="0.5"><path d="M0,-7 C3,-3 3,1 0,4 C-3,1 -3,-3 0,-7 Z"/><path d="M-1,2 C-5,-2 -9,0 -7,4 C-5,3 -3,3 -1,4 Z"/><path d="M1,2 C5,-2 9,0 7,4 C5,3 3,3 1,4 Z"/><rect x="-5" y="4" width="10" height="1.6"/></g>
+    </svg>
+  </div>
+  <div id="cartoucheBox" aria-hidden="true"><div id="cartouche"></div><div id="cartoucheSub"></div></div>
+  <div id="tip" hidden></div>
+  <div id="unitPicker" hidden></div>
+  <div class="zoom">
+    <button id="zin" title="Zoom in">+</button>
+    <button id="zout" title="Zoom out">−</button>
+    <button id="zfit" title="Zoom to what we know">Fit</button>
+    <button id="zworld" title="Zoom out to the whole world grid">World</button>
+    <button id="zsave" title="Save the map as it's shown now, as a picture (PNG)">Save</button>
+  </div>
+  <div id="status" class="muted"></div>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

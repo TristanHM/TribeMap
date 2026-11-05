@@ -1,0 +1,35 @@
+code,name,status_name,colour,mp,mp_source,notes
+PR,Prairie,PRAIRIE,#c8ec8f,3,mandate 10.5,status name confirmed (906-04)
+PPR,Grassland,GRASSLAND,#b5e07a,,,
+GH,Grassy Hills,GRASSY HILLS,#a9c96a,5,mandate 10.5,status name confirmed (Discord Jan 2025)
+GHP,Grassy Hills (plateau),,#9fbf5f,5,mandate 10.5,
+BF,Brush Flat,BRUSH FLAT,#dedd86,4,mandate 10.5,
+BR,Brush,BRUSH,#d2cf7a,4,mandate 10.5,
+BH,Brush Hills,BRUSH HILLS,#d8d36a,6,mandate 10.5,
+CH,Conifer Hills,CONIFER HILLS,#7f9a4a,6,mandate 10.5,
+D,Deciduous Forest,DECIDUOUS FOREST,#6fae5a,5,mandate 10.5,
+DF,Deciduous Forest,DECIDUOUS FOREST,#6fae5a,5,mandate 10.5,code seen on Discord
+DH,Deciduous Hills,DECIDUOUS HILLS,#5f9a4a,6,mandate 10.5,
+JG,Jungle,JUNGLE,#3f8f4a,5,mandate 10.5,
+JH,Jungle Hills,JUNGLE HILLS,#357a3f,6,mandate 10.5,
+UJS,Wetland Forest,,#4d8f6a,,,
+SW,Swamp,SWAMP,#9ad9ad,8,mandate 10.5,
+TU,Tundra,TUNDRA,#c7d1b0,4,mandate 10.5,
+AR,Arid,ARID,#e3d2a4,3,mandate 10.5,
+AH,Arid Hills,ARID HILLS,#d4bf8a,5,mandate 10.5,
+DE,Desert,DESERT,#f0dc9a,5,mandate 10.5,
+UL,Cold Desert,,#d9d4c0,,,
+RH,Rocky Hills,ROCKY HILLS,#b0a08a,6,mandate 10.5,
+SH,Snow Hills,SNOW HILLS,#e6eef2,7,mandate 10.5,
+LCM,Low Conifer Mountains,LOW CONIFER MOUNTAINS,#6b7a1e,10,mandate 10.5,
+LJM,Low Jungle Mountains,LOW JUNGLE MOUNTAINS,#2f6b35,10,mandate 10.5,
+LSM,Low Snowy Mountains,LOW SNOWY MOUNTAINS,#c9d3d8,10,mandate 10.5,
+LAM,Low Arid Mountains,,#a08a6a,9,mandate 10.5,
+LVM,Low Volcanic Mountains,,#8a5a4a,10,mandate 10.5,
+UM,Mixed Forest Mountains,,#5a7a3a,,,
+HSM,High Snowy Mountains,HIGH SNOWY MOUNTAINS,#f4f7f9,,,impassable except through a pass
+ALPS,Alps,ALPS,#ffffff,,,larger HSM
+PI,Polar Ice,POLAR ICE,#eaf6fb,7,mandate 10.5,
+L,Lake,LAKE,#7fb7e6,,,
+O,Ocean,OCEAN,#4f8fd0,,,
+UW,Ocean,,#4f8fd0,,,

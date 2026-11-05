@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+
+# Game data must never be committed
+*.db
+*.db-journal
+*.docx
+*.xlsx
+*.wxx
+*.png
+!webapp/guide/img/*.png
+*.svg
+!tribemap/static/favicon.svg
+*.pdf
+corrections.csv
+config.toml
+backups/

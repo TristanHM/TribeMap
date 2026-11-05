@@ -1,0 +1,26 @@
+[project]
+name = "tribemap"
+version = "0.1.0"
+description = "TribeNet map database, renderer and planner"
+requires-python = ">=3.12"
+dependencies = ["matplotlib", "openpyxl", "fastapi", "uvicorn", "playwright"]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-timeout", "httpx", "playwright"]
+
+[project.scripts]
+tn = "tribemap.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["tribemap"]
+
+[tool.setuptools.package-data]
+tribemap = ["data/*.csv", "static/*"]
+
+[tool.pytest.ini_options]
+# no test should take anywhere near this; a stuck one fails with a traceback instead of hanging the run
+timeout = 60
