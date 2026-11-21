@@ -46,6 +46,7 @@ const state = {
   edit: null,   // {draft: {...}, replace: [unit, kind, party] | null, next: [], picking: false, error: ""}
   selected: recall("selected", null),   // the one tribe (with its elements) or element shown at full strength
   hist: { on: false, from: recall("histFrom", ""), to: recall("histTo", ""), tracks: [] },   // off each time the page opens
+  tab: recall("tab", "map"), planner: null, plUnit: recall("plUnit", null),   // the Planner tab and its chosen unit
 };
 
 // ---------- helpers ----------
@@ -111,6 +112,7 @@ function planLabel(turn, variant) { return variant && variant !== "main" ? `${tu
 function setPlan(turn, variant) {
   state.planTurn = turn || "";
   state.planVariant = variant || "main";
+  $("exportOrdersStatus").hidden = true;
   store("planTurn", state.planTurn);
   store("planVariant", state.planVariant);
 }
@@ -150,6 +152,7 @@ async function loadAll(keepView) {
     renderUnits();
     renderLegend();
     if (state.sel) select(state.sel, false);
+    if (state.tab === "planner") loadPlanner();
     const known = state.map.hexes.filter((h) => h.terrain).length;
     $("status").textContent = state.meta.latest_turn
       ? `Our latest report ${state.meta.latest_turn} · ${known} hexes known` + (state.asOf ? ` · showing as of ${state.asOf}` : "")
@@ -1684,7 +1687,7 @@ function planMsg(text, warn) {
   el.innerHTML = text || "";
 }
 function droppedText(n, unit) {
-  return n ? ` Removed ${n} of ${esc(unit)}'s scout route${n === 1 ? "" : "s"}: they left from the old move's end.` : "";
+  return n ? ` Held ${n} of ${esc(unit)}'s scout route${n === 1 ? "" : "s"} for review in Planner.` : "";
 }
 function draftFromForm() {
   const kind = $("eKind").value;
@@ -1810,7 +1813,7 @@ function renderEditor() {
     const used = r.assumed ? `at least ${r.known_cost}` : `${r.mp_used}`;
     st = `<b>${esc(r.name)}</b> from ${esc(r.sim.start)} → <b>${esc(r.end)}</b>, ${used} of ${r.mp} MP used (${esc(r.mover)})`;
     if (r.notable_stop) st += `<br><span class="err">${esc(r.notable_stop)}</span>`;
-    if (E.drops) st += `<br><span class="err">Saving will remove ${esc(E.draft.unit)}'s ${E.drops} scout route${E.drops === 1 ? "" : "s"} (they leave from where this move ends).</span>`;
+    if (E.drops) st += `<br><span class="err">Saving will hold ${esc(E.draft.unit)}'s ${E.drops} scout route${E.drops === 1 ? "" : "s"} for review in Planner.</span>`;
     if (r.sim.unused_orders.length) st += `<br><span class="muted">never reached: ${esc(r.sim.unused_orders.join(","))}</span>`;
   }
   if (E.picking) st = `<b>Click a hex on the map to set the start.</b><br>` + st;
@@ -1884,6 +1887,7 @@ async function deleteEdit() {
 function unitChoices() {
   const units = new Set(state.map.units.map((u) => u.unit));
   if (state.plan) state.plan.routes.forEach((r) => units.add(r.unit));
+  for (const unit of state.plan?.planned_units || []) units.add(unit);
   return [...units].sort();
 }
 function newDraftUnit() {
@@ -2074,6 +2078,8 @@ $("layers").addEventListener("change", (e) => {
 // folding sections remember whether they were open (in this browser)
 for (const d of document.querySelectorAll("details.fold")) {
   d.open = recall("fold." + d.id, true);
+  // The browser queues the toggle event. Save the user's choice before an immediate reload.
+  d.querySelector("summary").addEventListener("click", () => store("fold." + d.id, !d.open));
   d.addEventListener("toggle", () => store("fold." + d.id, d.open));
 }
 $("histOn").onchange = () => { state.hist.on = $("histOn").checked; histChanged(); };
@@ -2103,7 +2109,7 @@ $("plan").onchange = (e) => {
     $("newPlanTurn").value = turn;
     $("newPlanName").value = freeName(turn);
     $("newPlanFrom").textContent = state.planTurn ? planLabel(state.planTurn, state.planVariant) : "";
-    $("newPlanCopy").checked = !!state.planTurn && state.plan && state.plan.routes.length > 0;
+    $("newPlanCopy").checked = !!state.planTurn;
     $("newPlanCopy").disabled = !state.planTurn;
     $("newPlanErr").textContent = "";
     $("newPlan").hidden = false;
@@ -2141,6 +2147,7 @@ $("newPlan").addEventListener("submit", async (e) => {
   }
   const copyFrom = $("newPlanCopy").checked && state.planTurn === turn ? state.planVariant : null;
   try {
+    if (copyFrom) await PlannerOrders.flush(state.planner);
     const res = await api(`/api/plan/${turn}/copy`, { json: { to: name, from: copyFrom } });
     setPlan(turn, res.variant);
     $("newPlan").hidden = true;
@@ -2165,6 +2172,7 @@ $("deletePlan").onclick = async () => {
   const b = $("deletePlan");
   if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Click again to delete"; return; }
   try {
+    await PlannerOrders.flush(state.planner);
     await api(`/api/plan/${state.planTurn}?variant=${encodeURIComponent(state.planVariant)}`, { method: "DELETE" });
     planMsg(`Deleted plan ${esc(planLabel(state.planTurn, state.planVariant))}.`);
     const other = (state.meta.plans || []).find((p) => !(p.turn === state.planTurn && p.variant === state.planVariant));
@@ -2193,6 +2201,25 @@ $("exportWxx").onclick = async () => {
   }
 };
 
+$("exportOrders").onclick = async () => {
+  const button = $("exportOrders"), message = $("exportOrdersStatus");
+  const turn = state.planTurn, variant = state.planVariant;
+  const isSelectedPlan = () => state.planner?.turn === turn && state.planner?.variant === variant;
+  if (turn && !isSelectedPlan()) {
+    button.disabled = true;
+    try { await loadPlanner(); }
+    finally { button.disabled = false; }
+  }
+  if (turn !== state.planTurn || variant !== state.planVariant || state.tab !== "planner") return;
+  if (!turn || !isSelectedPlan()) {
+    message.textContent = turn ? "Could not load the selected plan." : "Choose a plan to export.";
+    message.classList.add("pl-flag");
+    message.hidden = false;
+    return;
+  }
+  await PlannerOrders.exportDraft(button, state.planner, message, true);
+};
+
 // ---------- project files ----------
 // Save data downloads everything as one .zip (web/project.py); Open data (browser-only version) replaces
 // everything with one, after the old data is backed up.
@@ -2217,6 +2244,7 @@ function backupNote() {
 }
 $("projectSave").onclick = async () => {
   try {
+    await PlannerOrders.flush(state.planner);
     const res = await fetch("/api/project");
     const saved = await download(res, "tribemap-project.zip");
     store("projectSaved", Date.now());
@@ -2318,6 +2346,7 @@ async function importFiles(files) {
       continue;
     }
     try {
+      await PlannerOrders.flush(state.planner);
       const d = await api("/api/import", { json: { filename: up.filename, data: up.data } });
       let h = d.skipped ? `already imported; nothing changed`
         : d.map ? `map: ${d.hexes} hexes, ${d.rivers} river sides` + (d.own ? "" : ", as other players' information")
@@ -2411,6 +2440,7 @@ $("planSummary").addEventListener("click", async (e) => {
               [r.unit, r.kind, r.party]);
   } else if (b.id === "exportPlan") {
     try {
+      await PlannerOrders.flush(state.planner);
       if (state.meta.project_open) {   // the browser-only version: no turn folder, so it goes to the downloads
         const res = await fetch(`/api/plan/${state.planTurn}/paste-in` + pq());
         $("exportMsg").textContent = `Saved ${await download(res, "PlanPaste.xlsx")} to your downloads`;
@@ -2539,7 +2569,400 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// ---------- TribePlanner (the Planner tab) ----------
+// Each tribe and element as it starts the planned turn (/api/planner, unitsheet.sheets): where it is, what it has,
+// what the plan has it doing, last turn's report, and checks. Moves and scouts are still edited on the map.
+const SECTIONS = ["Animals", "Minerals", "War Equipment", "Finished Goods", "Raw Materials", "Ships"];
+function showTab(tab, load = true) {
+  state.tab = tab === "planner" ? "planner" : "map";
+  store("tab", state.tab);
+  const planner = state.tab === "planner";
+  document.body.classList.toggle("planner", planner);
+  $("tabMap").classList.toggle("on", !planner);
+  $("tabPlanner").classList.toggle("on", planner);
+  $("mapWrap").hidden = planner;
+  $("plannerWrap").hidden = !planner;
+  if (planner) { if (load) loadPlanner(); }
+  else if (state.map) drawAll();   // drawn while hidden: draw again now it has its size
+}
+async function loadPlanner() {
+  if (!state.planTurn) {
+    $("planner").innerHTML = `<p class="muted">Choose a plan in the side panel (or make a new one) to plan its turn here.</p>`;
+    return;
+  }
+  const turn = state.planTurn, variant = state.planVariant;
+  const v = variant && variant !== "main" ? `?variant=${encodeURIComponent(variant)}` : "";
+  try {
+    const data = await api(`/api/planner/${turn}` + v);
+    if (turn !== state.planTurn || variant !== state.planVariant) return;
+    state.planner = data;
+  } catch (e) {
+    $("planner").innerHTML = `<p class="warn">Couldn't load the plan: ${esc(e.message)}</p>`;
+    return;
+  }
+  renderPlanner();
+  PlannerOrders.loaded(state.planner);
+}
+function num(x) { return x === null || x === undefined ? "" : Number(x).toLocaleString(); }
+function checkList(cs) {
+  if (!cs.length) return `<p class="muted">Nothing to flag.</p>`;
+  return `<ul class="checks">${cs.map((c) =>
+    `<li class="${c.level}">${esc(c.text)}<span class="src">${esc(c.source)}</span></li>`).join("")}</ul>`;
+}
+function plannerRow(u) {
+  const w = u.where, food = u.inventory["Finished Goods"] ? u.inventory["Finished Goods"].Provs || 0 : 0;
+  const eat = u.people.People || 0;
+  const cap = u.mover === "mounted" ? u.carry.mounted : u.carry.walking;
+  const load = cap ? `${Math.round(100 * (u.carry.weight || 0) / cap)}%` : (u.carry.weight ? "no capacity" : "");
+  const mv = u.plan.move;
+  return `<tr class="unit${u.unit === state.plUnit ? " on" : ""}" data-plunit="${esc(u.unit)}">
+    <td><button type="button" class="pl-unit-select" aria-pressed="${u.unit === state.plUnit}">${esc(u.unit)}${u.name ? ` · ${esc(u.name)}` : ""}</button>${u.new ? ' <span class="badge">new</span>' : ""}</td>
+    <td>${w ? `<a class="go" data-hex="${esc(w.hex)}" title="Show it on the map">${esc(w.hex)}</a>` : "?"}</td><td>${w && w.terrain ? esc(terrainName(w.terrain)) : ""}</td>
+    <td class="num">${num(eat)}</td>
+    <td class="num">${num(food)}${eat ? ` <span class="muted">(${Math.floor(food / eat)} turns)</span>` : ""}</td>
+    <td class="num">${load}</td>
+    <td>${mv ? `${esc(mv.orders)} <span class="muted">→ ${esc(mv.end || "?")}</span>` : '<span class="muted">stays</span>'}</td>
+    <td class="num">${u.plan.scouts.length || ""}</td>
+    <td class="num" data-pl-worker-balance="${esc(u.unit)}">${PlannerOrders.balance(u, state.planner)}</td>
+    <td data-pl-draft-count="${esc(u.unit)}">${PlannerOrders.checkCount(u, state.planner)}</td></tr>`;
+}
+function renderPlanner() {
+  const d = state.planner;
+  if (!d) return;
+  if (!d.units.length) {
+    $("planner").innerHTML = `<p class="muted">No units yet: import a turn report first.</p>`;
+    return;
+  }
+  if (!d.units.some((u) => u.unit === state.plUnit)) state.plUnit = d.units[0].unit;
+  const previousTable = $("planner").querySelector(".pl-unit-table");
+  const previousFilter = $("planner").querySelector("#plUnitFilter")?.value || "all";
+  const tableOffset = [previousTable?.scrollLeft || 0, previousTable?.scrollTop || 0];
+  const c = d.calendar;
+  const chip = (key, cls, label) =>
+    `<button type="button" class="ev ${cls}${state.plEvent === key ? " open" : ""}" data-ev="${esc(key)}"
+      title="What it is and what to get ready">${label}</button>`;
+  const cal = [chip("Winter", c.winter ? "now winter" : "winter",
+                    c.winter ? `Month ${c.month} · winter` : `Month ${c.month} · winter in ${c.winter_in}`)]
+    .concat(c.events.map((e) => chip(e.name, e.in_turns === 0 ? "now" : "", `${esc(e.name)} ${e.in_turns === 0 ? "this turn" :
+      `in ${e.in_turns}`} <span class="muted">(month ${e.month})</span>`)));
+  const ev = state.plEvent === "Winter" ? { name: "Winter", ...c.winter_info } : c.events.find((e) => e.name === state.plEvent);
+  const evBox = !ev ? "" : `<div class="evinfo"><button type="button" class="evclose" data-ev="" title="Close">×</button>
+      <b>${esc(ev.name)}</b> <span class="muted">· month${ev.months.length > 1 ? "s" : ""} ${ev.months.join(", ")}</span>
+      <p>${esc(ev.what)}</p><ul>${ev.prepare.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+      <div class="src">${esc(ev.source)}</div></div>`;
+  $("planner").innerHTML = `
+    <div class="plhead"><span class="title">Plan ${esc(planLabel(d.turn, d.variant))}</span>
+      <span class="muted">Starting from the ${esc(d.report_turn || "")} report. Moves and scouts are planned on the
+        <a class="go" data-go="map">Map</a>.</span></div>
+    <div class="cal">${cal.join("")}</div>${evBox}
+    ${d.checks.length ? checkList(d.checks) : ""}
+    <div class="pl-unit-tools"><label>Show <select id="plUnitFilter"><option value="all">All units</option>
+      <option value="tribes">Tribes</option><option value="elements">Elements</option><option value="checks">Units with draft checks</option></select></label>
+      <button type="button" id="plShowCreate">Plan a new unit</button></div>
+    <form class="pl-unit-tools" id="plCreateUnit" hidden>
+      <label>From tribe <select name="parent" required>${d.units.filter((u) => !u.new && u.kind === "Tribe" && u.where).map((u) =>
+        `<option value="${esc(u.unit)}">${esc(u.unit)} ${esc(u.name)}</option>`).join("")}</select></label>
+      <label>New unit ID <input name="unit" placeholder="0999e1" required></label>
+      <label>Planner name <input name="unitName"></label>
+      <button type="submit">Add before movement</button><span id="plCreateError" class="pl-flag" role="status"></span>
+    </form>
+    <div class="pl-unit-table"><table class="units"><thead><tr><th>Unit</th><th>Starts in</th><th>Terrain</th><th class="num">People</th>
+      <th class="num">Provs</th><th class="num">Load</th><th>Move</th><th class="num">Scouts</th><th class="num">Workers free</th><th>Draft checks</th></tr></thead>
+      <tbody>${d.units.map(plannerRow).join("")}</tbody></table></div>
+    ${unitSheet(d.units.find((u) => u.unit === state.plUnit))}`;
+  $("planner").querySelector(".pl-unit-table").scrollTo(...tableOffset);
+  $("plUnitFilter").value = previousFilter;
+  applyPlannerFilter();
+  $("plSide").innerHTML = plannerSide(d.units.find((u) => u.unit === state.plUnit), d.skill_info || {});
+  PlannerOrders.status();
+}
+function weightBar(carry, predicted) {
+  // one bar: Mounted (up to mounted capacity), Walking (up to walking capacity), Stationary (beyond); the capacities
+  // above it where the sections meet, and the weight now (solid) and predicted next turn (dashed) below
+  const m = carry.mounted || 0, w = Math.max(carry.walking || 0, m), now = carry.weight || 0;
+  const next = predicted ? predicted.weight : null;
+  const top = Math.max(w, now, next || 0) * 1.3 || 1;
+  const pc = (v) => Math.min(100, (100 * v) / top).toFixed(2);
+  // a label centred on its point, but kept inside the bar near either end
+  const at = (v) => { const x = +pc(v);
+    return `left:${x}%;transform:translateX(${x < 12 ? "0" : x > 88 ? "-100%" : "-50%"})`; };
+  const sect = (cls, a, b, label) => b > a ?
+    `<div class="wsec ${cls}" style="left:${pc(a)}%;width:${(pc(b) - pc(a)).toFixed(2)}%" title="${label}"><span>${label}</span></div>` : "";
+  const cut = (v, label) => `<div class="wcut" style="${at(v)}">${num(v)}<span class="muted"> ${label}</span></div>`;
+  const where = (v) => v <= m && m ? "mounted" : v <= w ? "walking" : "stationary";
+  const mark = (v, cls, label, tip) => `<div class="wmark ${cls}" style="left:${pc(v)}%" title="${esc(tip)}"></div>
+    <div class="wlabel ${cls}" style="${at(v)}" title="${esc(tip)}">${label} ${num(v)}</div>`;
+  const tip = predicted ? Object.entries(predicted.change).map(([k, d]) => `${k} ${d > 0 ? "+" : ""}${num(d)}`).join(", ") : "";
+  return `<div class="wbar">
+      ${m ? cut(m, "mounted") : ""}${w ? cut(w, "walking") : ""}
+      <div class="wtrack">${sect("mounted", 0, m, "Mounted")}${sect("walking", m, w, "Walking")}${sect("stationary", w, top, "Stationary")}</div>
+      ${mark(now, "now", "Now", `Weight now: ${num(now)} (${where(now)})`)}
+      ${next !== null ? mark(next, "next", "Next ≈", `Predicted next turn: ${num(next)} (${where(next)}). Last turn's change: ${tip}`) : ""}
+    </div>`;
+}
+function planMap(u) {
+  // the unit's corner of the map: the hexes around its start and its planned routes (move in black, scouts in
+  // their colours); the routes themselves are edited on the Map tab
+  const start = u.where && state.byId[u.where.hex];
+  const routes = state.plan ? state.plan.routes.filter((r) => r.unit === u.unit && r.points) : [];
+  const ps = routes.flatMap((r) => r.points).concat(start ? [[start.x, start.y]] : []);
+  if (!ps.length || !state.map) return `<p class="muted">No known position or routes.</p>`;
+  const xs = ps.map(([x]) => x), ys = ps.map(([, y]) => y);
+  let x0 = Math.min(...xs) - 1.6, x1 = Math.max(...xs) + 1.6, y0 = Math.min(...ys) - 1.6, y1 = Math.max(...ys) + 1.6;
+  const minW = 7, minH = 5;   // never zoomed in tighter than a few hexes
+  if (x1 - x0 < minW) { const c = (x0 + x1) / 2; x0 = c - minW / 2; x1 = c + minW / 2; }
+  if (y1 - y0 < minH) { const c = (y0 + y1) / 2; y0 = c - minH / 2; y1 = c + minH / 2; }
+  let g = "";
+  for (const h of state.map.hexes) {
+    if (h.x < x0 - 1 || h.x > x1 + 1 || h.y < y0 - 1 || h.y > y1 + 1) continue;
+    const [t, unv] = shownTerrain(h);
+    g += `<polygon points="${poly(h.x, h.y)}" fill="${t ? colour(t) : "#ececec"}" fill-opacity="${unv ? 0.5 : 1}"
+      stroke="#fff" stroke-width="0.05"><title>${esc(h.id)}${t ? " · " + esc(terrainName(t)) : ""}</title></polygon>`;
+  }
+  const order = routes.slice().sort((a, b) => (a.kind === "move") - (b.kind === "move"));   // the move on top
+  for (const r of order) {
+    const move = r.kind === "move", c = move ? "#111" : r.colour;
+    const tip = `${move ? "Move" : "Scout " + r.party}: ${r.orders}${r.end ? " → " + r.end : ""}` +
+      (r.mp_used !== undefined ? ` (${r.mp_used} of ${r.mp} MP)` : "");
+    g += `<polyline points="${pts(r.points)}" fill="none" stroke="${c}" stroke-width="${move ? 0.2 : 0.11}"
+      stroke-linejoin="round" stroke-linecap="round"${move ? "" : ' stroke-dasharray="0.3 0.15"'}><title>${esc(tip)}</title></polyline>`;
+    const [ex, ey] = r.points[r.points.length - 1];
+    g += `<circle cx="${ex}" cy="${ey}" r="${move ? 0.22 : 0.14}" fill="${c}"><title>${esc(tip)}</title></circle>`;
+  }
+  if (start) g += `<circle cx="${start.x}" cy="${start.y}" r="0.32" fill="#fff" stroke="#111" stroke-width="0.1">
+    <title>${esc(u.unit)} starts in ${esc(u.where.hex)}</title></circle>`;
+  return `<svg class="planmap" viewBox="${x0} ${y0} ${x1 - x0} ${y1 - y0}" preserveAspectRatio="xMidYMid meet"
+    data-edit="${esc(u.unit)}">${g}</svg>`;
+}
+function plannerSide(u, info) {
+  // the left-hand pane on the Planner tab: the chosen unit's skills (by group, full names, what each does on
+  // mouseover) and its goods
+  const groups = { A: [], B: [], C: [], "?": [] };
+  for (const [k, lvl] of Object.entries(u.skills)) {
+    const s = info[k] || { skill: k, group: "?" };
+    (groups[s.group] || groups["?"]).push([s, lvl]);
+  }
+  const tip = (s) => [s.description || "No description yet.", s.limited ? "Workers limited to 10 per level (unlimited at 10)." : "",
+    s.source ? `Source: ${s.source}` : ""].filter(Boolean).join("\n");
+  const skills = Object.entries(groups).filter(([, l]) => l.length).map(([g, l]) =>
+    `<div class="skgroup"><div class="skhead">Group ${esc(g)}</div>${l.sort((a, b) => a[0].skill.localeCompare(b[0].skill)).map(([s, lvl]) =>
+      `<div class="skill" title="${esc(tip(s))}"><span>${esc(s.skill)}</span><b>${lvl}</b></div>`).join("")}</div>`).join("");
+  const goodTip = (k, n) => {
+    const g = (state.planner.goods_info || {})[k];
+    if (!g) return "";
+    const lines = [`${g.name}${g.table ? " · " + g.table : ""}${g.weight !== null ? ` · ${num(g.weight)} lb each (${num(Math.round(g.weight * n))} lb held)` : ""}`];
+    g.notes.forEach((x) => lines.push(`• ${x.note} (${x.source})`));
+    if (g.used_in.length) lines.push("Used in (amount each, Mandate):", ...g.used_in.map((x) => "  " + x));
+    if (g.recipes.length) lines.push("Made by:", ...g.recipes.map((x) => "  " + x));
+    const list = (label, l) => { if (l.length) lines.push(`${label}: ${l.join("; ")}`); };
+    list("Made by", g.made_by); list("Material for", g.material_for); list("Tool for", g.tool_for);
+    if (g.made_by.length + g.material_for.length + g.tool_for.length)
+      lines.push("(Tool and other activity links: the orders workbook's Valid Activity and Valid_Implements tabs)");
+    return lines.join("\n");
+  };
+  const sections = [...new Set([...SECTIONS, ...Object.keys(u.inventory)])];
+  const goods = sections.filter((s) => u.inventory[s]).map((s) => `<div class="skhead">${esc(s)}</div>` +
+    Object.entries(u.inventory[s]).map(([k, v]) => `<div class="skill" title="${esc(goodTip(k, v))}">
+      <button type="button" class="pl-good-link" data-pl-good="${esc(k)}" aria-label="View ${esc(k)} history">${esc(k)}</button><b>${num(v)}</b></div>`).join("")).join("");
+  return `<h2>${esc(u.unit)} skills</h2>${skills || '<p class="muted">None.</p>'}
+    <h2>${esc(u.unit)} goods</h2>${goods || '<p class="muted">None.</p>'}`;
+}
+const goodsHistoryKey = (unit) => `goodsHistory.${state.meta?.clan || ""}.${unit.unit}`;
+const historyPanels = () => [...document.querySelectorAll(".pl-history-panel")];
+function goodsHistory(unit) {
+  const reports = unit.goods_history || [];
+  const options = [...new Set(reports.flatMap(({ goods }) => Object.keys(goods)))].sort((a, b) => a.localeCompare(b));
+  if (!options.length) return '<p class="muted">No goods recorded for this unit yet.</p>';
+  const saved = recall(goodsHistoryKey(unit), []);
+  const defaults = [...new Set(["Provs", "Horse", "Log", "Silver", ...options])].filter((good) => options.includes(good));
+  return `<div class="pl-history-grid">${Array.from({ length: 4 }, (_, slot) => {
+    const selected = saved[slot] ?? defaults[slot] ?? "";
+    const choices = selected && !options.includes(selected) ? [...options, selected] : options;
+    return `<div class="pl-history-panel">
+      <label>Chart ${slot + 1} <select data-pl-history-good aria-label="Good for chart ${slot + 1}">
+        <option value="">Select a good</option>
+        ${choices.map((name) => `<option${name === selected ? " selected" : ""}>${esc(name)}</option>`).join("")}</select></label>
+      <div data-pl-history-chart>${goodsHistoryPanel(unit, selected)}</div></div>`;
+  }).join("")}</div>`;
+}
+
+function goodsHistoryPanel(unit, good) {
+  if (!good) return '<p class="muted">Select a good to chart its reported quantities.</p>';
+  if (!unit.goods_history.some((row) => row.goods[good] != null)) return '<p class="muted">No quantities were reported for this good.</p>';
+  return goodsChart(unit.goods_history, good) + goodsComparison(unit, good);
+}
+
+function goodsComparison(unit, good) {
+  const previous = state.planner.previous_export;
+  const actual = unit.goods_history?.find((row) => row.turn === previous?.turn)?.goods[good];
+  const estimate = previous?.estimates?.[unit.unit]?.[good];
+  if (actual == null || estimate == null) return "";
+  const delta = actual - estimate;
+  return `<p class="pl-phase">Turn ${esc(previous.turn)} · Last export estimate <strong>${num(estimate)}</strong> ·
+    Reported <strong>${num(actual)}</strong> · Difference <strong>${delta > 0 ? "+" : ""}${num(delta)}</strong></p>`;
+}
+
+function goodsChart(reports, good) {
+  const values = reports.map(({ goods }) => goods[good]);
+  const top = Math.max(1, ...values.filter((value) => value != null));
+  const width = 490, left = 70, right = 33, first = 16, last = 126;
+  const x = (i) => reports.length === 1 ? (width + left - right) / 2 : left + i * (width - left - right) / (reports.length - 1);
+  const y = (value) => last - (last - first) * value / top;
+  const ticks = [...new Set([0, Math.round(top / 2), top])].map((value) => {
+    const label = value < 1000000 ? num(value) : value.toLocaleString(undefined, { notation: "compact" });
+    return `<path class="pl-gridline" d="M${left},${y(value)} H${width - right}"/><text x="${left - 10}" y="${y(value) + 4}" text-anchor="end">${esc(label)}</text>`;
+  }).join("");
+  const series = values.map((value, i) => {
+    if (value == null) return "";
+    const segment = values[i - 1] == null ? "" : `<line class="pl-series" x1="${x(i - 1)}" y1="${y(values[i - 1])}" x2="${x(i)}" y2="${y(value)}"/>`;
+    return `${segment}<circle class="pl-point" cx="${x(i)}" cy="${y(value)}" r="4"><title>${esc(reports[i].turn)} · ${num(value)} ${esc(good)}</title></circle>`;
+  }).join("");
+  const every = Math.max(1, Math.ceil((reports.length - 1) / 5));
+  const labels = reports.map(({ turn }, i) => i === reports.length - 1 || (i % every === 0 && reports.length - 1 - i >= every)
+    ? `<text x="${x(i)}" y="147" text-anchor="middle">${esc(turn)}</text>` : "").join("");
+  return `<svg class="pl-history-graph" viewBox="0 0 ${width} 155" role="img" aria-label="${esc(good)} reported by turn">
+      ${ticks}${series}${labels}</svg>
+    <details class="pl-history-data"><summary>Reported quantities</summary><table>
+      <thead><tr><th>Turn</th><th class="num">Quantity</th></tr></thead>
+      <tbody>${reports.map(({ turn }, i) => `<tr><td>${esc(turn)}</td><td class="num">${values[i] == null ? "Unreported" : num(values[i])}</td></tr>`).join("")}</tbody>
+    </table></details>`;
+}
+
+function showGoodHistory(picker, name, scroll = false) {
+  const unit = state.planner?.units.find((u) => u.unit === state.plUnit);
+  if (!unit || !picker || ![...picker.options].some((option) => option.value === name)) return;
+  picker.value = name;
+  store(goodsHistoryKey(unit), historyPanels().map((panel) => panel.querySelector("[data-pl-history-good]").value));
+  picker.closest(".pl-history-panel").querySelector("[data-pl-history-chart]").innerHTML = goodsHistoryPanel(unit, name);
+  if (scroll) {
+    picker.scrollIntoView({ block: "center" });
+    picker.focus({ preventScroll: true });
+  }
+}
+
+function unitSheet(u) {
+  const p = u.people, carry = u.carry;
+  const none = (s) => `<span class="muted">${s}</span>`;
+  const mv = u.plan.move;
+  const plan = planMap(u) + (mv && mv.error ? `<div class="warn">${esc(mv.error)}</div>` : "") +
+    `<p><a class="go" data-edit="${esc(u.unit)}">Edit its routes on the map</a></p>`;
+  const herd = Object.entries(u.herders.by_animal), hl = u.herders.last_turn;
+  const people = `<dl>
+      <dt>People</dt><dd><b>${num(p.People || 0)}</b> <span class="muted">eat ${num(p.People || 0)} provs a turn</span></dd>
+      <dt>Warriors</dt><dd>${num(p.Warriors || 0)}</dd><dt>Actives</dt><dd>${num(p.Actives || 0)}</dd>
+      <dt>Inactives</dt><dd>${num(p.Inactives || 0)}</dd>
+      ${Object.entries(p).filter(([k]) => !["People", "Warriors", "Actives", "Inactives"].includes(k)).map(([k, v]) =>
+        `<dt>${esc(k)}</dt><dd>${num(v)}</dd>`).join("")}
+      <dt>Herders needed</dt><dd>${herd.length ? `<b>${num(u.herders.total)}</b> <span class="muted">(${herd.map(([a, v]) =>
+        `${esc(a.toLowerCase())} ${num(v)}`).join(" + ")})</span>` : none("no herds")}
+        ${hl ? `<div class="muted">Last turn: ${num(hl.allocated)} allocated, ${num(hl.required)} required</div>` : ""}</dd>
+      ${u.morale ? `<dt>Morale</dt><dd>${esc(u.morale)}</dd>` : ""}</dl>`;
+  const load = carry.weight === undefined ? `<p class="muted">Not in the report.</p>` :
+    weightBar(carry, u.predicted) +
+    `<p class="muted">Now: at the end of the ${esc(u.report_turn || "")} turn. ${u.predicted ? `Next: ${esc(u.predicted.basis)}.` :
+      "No prediction yet (it needs two reports)."} Usually moves ${esc(u.mover)}.</p>`;
+  const lt = u.last_turn;
+  const report = `<div class="report">
+      ${lt.activities ? `<p><b>Activities:</b> ${esc(lt.activities)}</p>` : '<p class="muted">No activities reported.</p>'}
+      ${lt.final ? `<p><b>Final:</b> ${esc(lt.final)}</p>` : ""}
+      ${lt.transfers.map((t) => `<p><b>Transfer:</b> ${esc(t)}</p>`).join("")}
+      ${lt.notes.map((t) => `<p><b>GM:</b> Chief, ${esc(t)}</p>`).join("")}</div>`;
+  return `<div class="unithead"><span class="title">${esc(u.unit)} ${esc(u.name)}</span>
+      <span class="muted">${esc(u.kind)}${u.parent && u.parent !== u.unit ? ` of ${esc(u.parent)}` : ""}${u.new ? " · created this turn" : ""}</span></div>
+    <div class="pl-workspace">
+      <section class="card pl-editor" aria-label="Draft orders">${PlannerOrders.editor(u, state.planner)}</section>
+      <div class="pl-context">
+        <div class="card"><h3>This turn's plan</h3>${plan}</div>
+        <div class="card"><h3>Turn budget</h3><div id="plBudget" aria-live="polite">${PlannerOrders.budget(u, state.planner)}</div></div>
+        <div class="card"><h3>Draft checks</h3><div id="plDraftChecks" aria-live="polite">${PlannerOrders.checks(u, state.planner)}</div></div>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card"><h3>Report checks</h3>${checkList(u.checks)}</div>
+      <div class="card"><h3>People</h3>${people}</div>
+      <div class="card"><h3>Weight</h3>${load}</div>
+      <div class="card wide"><h3>Goods history</h3>${goodsHistory(u)}</div>
+      <div class="card wide"><h3>Last turn${u.report_turn ? ` (${esc(u.report_turn)} report)` : ""}</h3>${report}</div>
+    </div>`;
+}
+$("tabMap").onclick = () => showTab("map");
+$("tabPlanner").onclick = () => showTab("planner");
+$("planner").addEventListener("click", (e) => {
+  if (e.target.closest("#plShowCreate")) {
+    $("plCreateUnit").hidden = !$("plCreateUnit").hidden;
+    if (!$("plCreateUnit").hidden) {
+      const parent = $("plCreateUnit").elements.namedItem("parent");
+      if ([...parent.options].some((o) => o.value === state.plUnit)) parent.value = state.plUnit;
+      $("plCreateUnit").elements.namedItem("unit").focus();
+    }
+    return;
+  }
+  if (PlannerOrders.click(e, state.planner, state.plUnit)) return;
+  const row = e.target.closest("[data-plunit]"), go = e.target.closest("a.go"), ev = e.target.closest("[data-ev]");
+  if (ev) {   // a calendar chip: open its explanation (again to close)
+    state.plEvent = ev.dataset.ev && ev.dataset.ev !== state.plEvent ? ev.dataset.ev : null;
+    renderPlanner();
+    return;
+  }
+  if (go && go.dataset.hex) { showTab("map"); select(go.dataset.hex, true); return; }
+  const pm = e.target.closest("svg.planmap");
+  if ((go && go.dataset.edit) || pm) { showTab("map"); selectUnit((go || pm).dataset.edit); return; }
+  if (go && go.dataset.go) { showTab(go.dataset.go); return; }
+  if (row) {
+    state.plUnit = row.dataset.plunit;
+    store("plUnit", state.plUnit);
+    renderPlanner();
+    if (e.target.closest(".pl-unit-select")) $("planner").querySelector(".unit.on .pl-unit-select").focus({ preventScroll: true });
+  }
+});
+$("planner").addEventListener("input", (e) => PlannerOrders.input(e, state.planner, state.plUnit));
+$("planner").addEventListener("submit", async (e) => {
+  if (e.target.id !== "plCreateUnit") return PlannerOrders.submit(e, state.planner, state.plUnit);
+  e.preventDefault();
+  const form = e.target, plan = state.planner;
+  const fields = new FormData(form);
+  const button = form.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    await PlannerOrders.flush(plan);
+    const result = await api(`/api/planner/${plan.turn}/create-unit?variant=${encodeURIComponent(plan.variant)}`, {
+      json: { from: fields.get("parent"), unit: fields.get("unit").trim(), name: fields.get("unitName").trim() },
+    });
+    state.plUnit = result.unit;
+    store("plUnit", state.plUnit);
+    await loadAll(true);
+  } catch (err) {
+    $("plCreateError").textContent = err.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+function applyPlannerFilter() {
+  const picker = $("plUnitFilter");
+  if (!picker) return;
+  for (const u of state.planner.units) {
+    const row = $("planner").querySelector(`[data-plunit="${CSS.escape(u.unit)}"]`);
+    if (row) row.hidden = (picker.value === "tribes" && u.kind !== "Tribe") ||
+      (picker.value === "elements" && u.kind !== "Element") ||
+      (picker.value === "checks" && !row.querySelector(".count.warn"));
+  }
+}
+$("planner").addEventListener("change", (e) => {
+  if (e.target.matches("[data-pl-history-good]")) showGoodHistory(e.target, e.target.value);
+  if (e.target.id === "plUnitFilter") applyPlannerFilter();
+});
+$("plSide").addEventListener("click", (e) => {
+  const good = e.target.closest("[data-pl-good]");
+  if (good) {
+    const pickers = historyPanels().map((panel) => panel.querySelector("[data-pl-history-good]"));
+    const picker = pickers.find((choice) => choice.value === good.dataset.plGood) || pickers[0];
+    showGoodHistory(picker, good.dataset.plGood, true);
+  }
+});
+
 renderLayers();
+showTab(URLP.get("tab") ?? state.tab, false);   // loadAll fills it
 loadAll(false).then(async () => {
   // Save's snapshot waits for this: drawn, fonts loaded, filters settled
   if (!URLP.get("snapshot")) return;

@@ -14,7 +14,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import coords
+from . import coords, worksheet
 from .planner import (FOLLOW, FOLLOW_BONUS, LIMIT, MAX_ORDERS, best_route, follow_hint, follow_path,
                       parse_orders, river_in_the_way, simulate, value_wedges)
 from .queries import knowledge, latest_turn, turn_key, turns_between, unit_positions
@@ -73,6 +73,12 @@ def copy_plan(conn, turn, src, dst):
     cols = "unit, kind, party, orders, scouts, horses, mission, colour, note, updated_at, start_hex, mover"
     n = conn.execute(f"INSERT INTO plan_route (turn, variant, {cols}) SELECT turn, ?, {cols} FROM plan_route"
                      " WHERE turn = ? AND variant = ?", (dst, turn, src)).rowcount
+    conn.execute("DELETE FROM plan_worksheet WHERE turn=? AND variant=?", (turn, dst))
+    conn.execute("INSERT INTO plan_worksheet (turn, variant, unit, data) "
+                 "SELECT turn, ?, unit, data FROM plan_worksheet WHERE turn=? AND variant=?", (dst, turn, src))
+    conn.execute("DELETE FROM plan_scout_review WHERE turn=? AND variant=?", (turn, dst))
+    conn.execute("INSERT INTO plan_scout_review SELECT turn, ?, unit, party, data "
+                 "FROM plan_scout_review WHERE turn=? AND variant=?", (dst, turn, src))
     conn.commit()
     return n
 
@@ -110,6 +116,8 @@ def add(conn, turn, unit, kind, orders, party=None, scouts=2, horses=2, mission=
             raise ValueError(f"party must be 1-{MAX_PARTIES}")
         conn.execute("DELETE FROM plan_route WHERE turn = ? AND variant = ? AND unit = ? AND kind = 'scout'"
                      " AND party = ?", (turn, variant, unit, party))
+        conn.execute("DELETE FROM plan_scout_review WHERE turn=? AND variant=? AND unit=? AND party=?",
+                     (turn, variant, unit, party))
     conn.execute(
         "INSERT INTO plan_route (turn, variant, unit, kind, party, orders, scouts, horses, mission, start_hex,"
         " mover, note, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -133,9 +141,41 @@ def scout_count(conn, turn, unit, variant=MAIN):
 
 
 def drop_scouts(conn, turn, unit, variant=MAIN):
-    """Remove a unit's scout routes (when its move changes, they start from the wrong hex)."""
+    """Hold a unit's scout routes for review when its launch hex may change."""
+    turn, variant = check_turn(turn), check_variant(variant)
+    for r in conn.execute("SELECT * FROM plan_route WHERE turn=? AND variant=? AND unit=? AND kind='scout'",
+                          (turn, variant, unit)).fetchall():
+        conn.execute("INSERT OR REPLACE INTO plan_scout_review VALUES (?, ?, ?, ?, ?)",
+                     (turn, variant, unit, r["party"], json.dumps(dict(r))))
     return conn.execute("DELETE FROM plan_route WHERE turn = ? AND variant = ? AND unit = ? AND kind = 'scout'",
-                        (check_turn(turn), check_variant(variant), unit)).rowcount
+                        (turn, variant, unit)).rowcount
+
+
+def held_scouts(conn, turn, variant=MAIN):
+    return [json.loads(r[0]) for r in conn.execute(
+        "SELECT data FROM plan_scout_review WHERE turn=? AND variant=? ORDER BY unit, party",
+        (check_turn(turn), check_variant(variant)))]
+
+
+def resolve_scout(conn, turn, variant, unit, party, restore):
+    turn, variant = check_turn(turn), check_variant(variant)
+    r = conn.execute("SELECT data FROM plan_scout_review WHERE turn=? AND variant=? AND unit=? AND party=?",
+                     (turn, variant, unit, party)).fetchone()
+    if not r:
+        raise ValueError("This scout order no longer needs review")
+    if restore:
+        row = json.loads(r[0])
+        add(conn, turn, unit, "scout", row["orders"], party=party, scouts=row["scouts"], horses=row["horses"],
+            mission=row["mission"], mover=row["mover"], note=row["note"], variant=variant)
+    else:
+        conn.execute("DELETE FROM plan_scout_review WHERE turn=? AND variant=? AND unit=? AND party=?",
+                     (turn, variant, unit, party))
+        conn.commit()
+
+
+def creations(conn, turn, variant):
+    return {unit: entry["orders"]["creation"] for unit, entry in worksheet.drafts(conn, turn, check_variant(variant)).items()
+            if entry["orders"].get("creation")}
 
 
 def remove(conn, turn, unit=None, kind=None, party=None, variant=MAIN):
@@ -264,6 +304,7 @@ def evaluate(conn, terrain, cfg, turn, as_of=None, draft=None, replace=None, var
     turn = check_turn(turn)
     hexes, edges = knowledge(conn, as_of)
     positions = unit_positions(conn, as_of)
+    new_units = creations(conn, turn, variant)
     rows = routes(conn, turn, variant)
     if draft:
         drop = {_key(draft)} | ({tuple(replace)} if replace else set())
@@ -277,6 +318,8 @@ def evaluate(conn, terrain, cfg, turn, as_of=None, draft=None, replace=None, var
         if fallback:
             return fallback
         pos = positions.get(row["unit"])
+        if pos is None and row["unit"] in new_units:
+            pos = positions.get(new_units[row["unit"]]["from"])
         return (pos["gx"], pos["gy"]) if pos else None
 
     for row in rows:
@@ -394,23 +437,11 @@ def coverage(planned, hexes, now, stale=STALE):
 
 # --- export / load -------------------------------------------------------------
 
-def export(conn, cfg, turn, outdir=None, variant=MAIN):
-    """Write the plan as a paste-in workbook (+ JSON copy) into the turn folder. Returns the paths.
-    A named variant gets its name in the file names (0999_906_5_B_PlanPaste.xlsx)."""
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill
-    from openpyxl.utils import get_column_letter
+def export_rows(conn, turn, variant=MAIN):
+    from .unitsheet import activity_list, skill_list, transfer_goods_codes
 
     turn, variant = check_turn(turn), check_variant(variant)
     rows = routes(conn, turn, variant)
-    if not rows:
-        raise ValueError(f"no plan for {turn}" + ("" if variant == MAIN else f" ({variant})"))
-    outdir = Path(outdir) if outdir else cfg.game_dir / turn_folder(turn)
-    outdir.mkdir(parents=True, exist_ok=True)
-    stem = f"{cfg.clan}_{turn_folder(turn).replace('-', '_')}"
-    if variant != MAIN:
-        stem += "_" + re.sub(r"[^A-Za-z0-9-]+", "_", variant)
-
     moves = [[None, r["unit"], None, None, None] + r["orders"].split(",")
              + ["Empty"] * (MAX_ORDERS["move"] - len(r["orders"].split(",")))
              for r in rows if r["kind"] == "move"]
@@ -418,69 +449,139 @@ def export(conn, cfg, turn, outdir=None, variant=MAIN):
               + ["EMPTY"] * (MAX_ORDERS["scout"] - len(r["orders"].split(",")))
               for r in rows if r["kind"] == "scout"]
 
+    saved = worksheet.drafts(conn, turn, variant)
+    extra, issues = worksheet.blocks(saved, rows, activity_list(), transfer_goods_codes(), skill_list())
+    held = held_scouts(conn, turn, variant)
+    issues.extend({"unit": r["unit"], "section": "Scouts", "row": r["party"],
+                   "message": "Review this scout order after the movement change."} for r in held)
+    route_blocks = [
+        ("Tribe_Movement", ["UnitName", "TRIBE", "FOLLOW_TRIBE", "MovementType", "Hex"]
+         + [f"MOVEMENT_{i}" for i in range(1, MAX_ORDERS["move"] + 1)], moves, 2),
+        ("Scout_Movement", ["UnitName", "TRIBE", "No_of_Scouts", "No_of_Horses", "Mission"]
+         + [f"Movement{i}" for i in range(1, MAX_ORDERS["scout"] + 1)], scouts, 2),
+    ]
+    return [block for block in route_blocks if block[2]] + extra, issues, snapshot(rows, saved, turn, variant, held)
+
+
+def snapshot(rows, saved, turn, variant, held=()):
+    routes_data = [{k: r.get(k) for k in FIELDS} for r in rows]
+    return {"turn": turn, "variant": variant, "routes": routes_data,
+            "worksheet": {unit: entry["orders"] for unit, entry in saved.items()},
+            "held_scouts": list(held)} if saved or held else routes_data
+
+
+def review(conn, turn, variant=MAIN):
+    turn, variant = check_turn(turn), check_variant(variant)
+    blocks, issues, data = export_rows(conn, turn, variant)
+    last = worksheet.last_export(conn, turn, variant)
+    current = json.loads(last["snapshot"]) if last else None
+    sheets = [{"name": title, "paste_at": "B3" if title == "Auto-GM" else "B2" if col == 2 else "A2",
+               "headers": headers[col - 1:], "rows": [row[col - 1:] for row in values]}
+              for title, headers, values, col in blocks]
+    return {"sheets": sheets, "issues": issues, "exported_at": last["exported_at"] if last else None,
+            "changed": bool(last and current["plan"] != data), "digest": worksheet.fingerprint(data)}
+
+
+def export(conn, cfg, turn, outdir=None, variant=MAIN):
+    """Write the paste-in workbook and restorable plan JSON."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    turn, variant = check_turn(turn), check_variant(variant)
+    export_blocks, issues, data = export_rows(conn, turn, variant)
+    held = sum(issue["section"] == "Scouts" for issue in issues)
+    if not data or not isinstance(data, dict) or not data["worksheet"]:
+        issues = [issue for issue in issues if issue["section"] != "Scouts"]
+    if issues:
+        raise ValueError(f"{issues[0]['unit']} · {issues[0]['message']}")
+    if not export_blocks:
+        raise ValueError(f"no plan for {turn}" + ("" if variant == MAIN else f" ({variant})"))
+    outdir = Path(outdir) if outdir else cfg.game_dir / turn_folder(turn)
+    outdir.mkdir(parents=True, exist_ok=True)
+    stem = f"{cfg.clan}_{turn_folder(turn).replace('-', '_')}"
+    if variant != MAIN:
+        stem += "_" + re.sub(r"[^A-Za-z0-9-]+", "_", variant)
     wb = Workbook()
     idx = wb.active
     idx.title = "READ ME"
     bold, head = Font(bold=True), PatternFill("solid", fgColor="D9E1F2")
     blocks = []
-    for title, headers, data in [
-        ("Tribe_Movement", ["UnitName", "TRIBE", "FOLLOW_TRIBE", "MovementType", "Hex"]
-         + [f"MOVEMENT_{i}" for i in range(1, MAX_ORDERS["move"] + 1)], moves),
-        ("Scout_Movement", ["UnitName", "TRIBE", "No_of_Scouts", "No_of_Horses", "Mission"]
-         + [f"Movement{i}" for i in range(1, MAX_ORDERS["scout"] + 1)], scouts),
-    ]:
-        if not data:
-            continue
+    for title, headers, values, col in export_blocks:
         ws = wb.create_sheet(title)
+        header_row = 2 if title == "Auto-GM" else 1
         for c, h in enumerate(headers, 1):
-            cell = ws.cell(1, c, h)
+            cell = ws.cell(header_row, c, h)
             cell.font, cell.fill = bold, head
-        for r, row in enumerate(data, 2):
+        for r, row in enumerate(values, header_row + 1):
             for c, v in enumerate(row, 1):
                 if v is not None:
-                    ws.cell(r, c, v)
-        ws.freeze_panes = "A2"
-        blocks.append((title, f"B2:{get_column_letter(len(headers))}{len(data) + 1}"))
+                    cell = ws.cell(r, c, v)
+                    if isinstance(v, str):
+                        cell.data_type = "s"
+        ws.freeze_panes = f"A{header_row + 1}"
+        start = f"{get_column_letter(col)}{header_row + 1}"
+        blocks.append((title, f"{start}:{get_column_letter(len(headers))}{len(values) + header_row}", start))
     which = "" if variant == MAIN else f", plan {variant}"
     notes = [f"Paste-in orders for Clan {cfg.clan}, turn {turn}{which} (generated by tn plan export)", "",
              "Each tab matches the order sheet of the same name, column for column.",
-             "Copy the range below and paste it at B2 of the same sheet in the orders file,",
+             "Copy the range below and paste it at the listed cell of the same sheet in the orders file,",
              "using Paste Values (Ctrl+Shift+V) so the dropdowns, formulas and formatting stay.",
-             "Column A is a formula: leave it alone.", ""]
+             "The listed ranges exclude formula columns.", ""]
+    if held:
+        notes += [f"{held} held scout order(s) are excluded from the workbook and kept in the plan snapshot.", ""]
     for r, line in enumerate(notes, 1):
         idx.cell(r, 1, line)
     idx["A1"].font = Font(bold=True, size=14)
     r = len(notes) + 1
     for c, h in enumerate(["Tab", "Copy this range", "Paste at"], 1):
         idx.cell(r, c, h).font = bold
-    for title, rng in blocks:
+    for title, rng, start in blocks:
         r += 1
         idx.cell(r, 1, title)
         idx.cell(r, 2, rng)
-        idx.cell(r, 3, "B2")
+        idx.cell(r, 3, start)
     idx.column_dimensions["A"].width = 22
     idx.column_dimensions["B"].width = 18
 
     xlsx = outdir / f"{stem}_PlanPaste.xlsx"
     wb.save(xlsx)
     js = outdir / f"{stem}_plan.json"
-    js.write_text(json.dumps([{k: r.get(k) for k in FIELDS} for r in rows], indent=1), encoding="utf-8")
-    def tab(rows):
-        return "\n".join("\t".join("" if v is None else str(v) for v in row[1:]) for row in rows)
-
-    tsv = {"Tribe_Movement": tab(moves), "Scout_Movement": tab(scouts)}
+    js.write_text(json.dumps(data, indent=1), encoding="utf-8")
+    tsv = {name: "\n".join("\t".join("" if v is None else str(v) for v in row[col - 1:]) for row in values)
+           for name, _, values, col in export_blocks}
     return xlsx, js, tsv
 
 
 def load(conn, path):
     """Restore a plan from a JSON export (replaces that plan variant)."""
-    rows = json.loads(Path(path).read_text(encoding="utf-8"))
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    rows = data["routes"] if isinstance(data, dict) else data
+    if isinstance(data, dict):
+        turn, variant = check_turn(data["turn"]), check_variant(data["variant"])
+        for unit, orders in data["worksheet"].items():
+            if not worksheet.unit_id(unit):
+                raise ValueError("Invalid unit in plan snapshot")
+            worksheet.validate(orders)
+        if any((check_turn(r["turn"]), check_variant(r.get("variant"))) != (turn, variant) for r in rows):
+            raise ValueError("Route belongs to a different plan")
+        if not rows:
+            remove(conn, turn, variant=variant)
     for turn, variant in {(r["turn"], r.get("variant") or MAIN) for r in rows}:
         remove(conn, turn, variant=variant)
     for r in rows:
         add(conn, r["turn"], r["unit"], r["kind"], r["orders"], party=r["party"], scouts=r["scouts"] or 2,
             horses=r["horses"] or 2, mission=r["mission"] or "PATROL", start=r["start_hex"], mover=r["mover"],
             note=r["note"], variant=r.get("variant") or MAIN)
+    if isinstance(data, dict):
+        for unit, orders in data["worksheet"].items():
+            worksheet.save(conn, turn, variant, unit, orders, expected=0)
+        if data.get("held_scouts"):
+            register(conn, turn, variant)
+            for r in data["held_scouts"]:
+                conn.execute("INSERT OR REPLACE INTO plan_scout_review VALUES (?, ?, ?, ?, ?)",
+                             (turn, variant, r["unit"], r["party"], json.dumps(r)))
+            conn.commit()
     return len(rows)
 
 
@@ -862,7 +963,9 @@ def archive_and_clear(conn, cfg):
         rows = routes(conn, turn, variant)
         archive.mkdir(parents=True, exist_ok=True)
         path = archive / f"{turn}_{re.sub(r'[^A-Za-z0-9-]+', '_', variant)}_{stamp}.json"
-        path.write_text(json.dumps([{k: r.get(k) for k in FIELDS} for r in rows], indent=1), encoding="utf-8")
+        path.write_text(json.dumps(snapshot(rows, worksheet.drafts(conn, turn, variant), turn, variant,
+                                            held_scouts(conn, turn, variant)), indent=1),
+                        encoding="utf-8")
         out.append((turn, variant, path))
     conn.execute("DELETE FROM plan_route")
     conn.execute("DELETE FROM plan")

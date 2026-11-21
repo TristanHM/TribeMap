@@ -3,7 +3,9 @@ import csv
 import hashlib
 import json
 import time
+import zipfile
 from pathlib import Path
+from xml.etree.ElementTree import ParseError
 
 from . import config, coords
 from .docx import read_report
@@ -44,12 +46,50 @@ def _store_obs(conn, source_id, turn, o, received):
          o.confidence, o.raw, o.line_no, received))
 
 
+def _planner_fields(unit):
+    return (json.dumps(unit.carry), unit.activities, json.dumps(unit.transfers),
+            json.dumps(unit.notes), unit.final, unit.goods_tribe)
+
+
+def _fill_planner_fields(conn, cfg, terrain, source_id, path):
+    report = Parser(terrain, cfg.clan).parse(read_report(path))
+    conn.executemany(
+        "UPDATE unit_turn SET carry_json = ?, activities = ?, transfers_json = ?, notes_json = ?, "
+        "final = ?, goods_tribe = ? WHERE source_id = ? AND turn = ? AND unit = ? AND carry_json IS NULL",
+        [(*_planner_fields(unit), source_id, report.turn, unit.unit) for unit in report.units])
+
+
+def fill_saved_planner_fields(conn, cfg, terrain):
+    """Populate Planner fields from the original reports still saved in this browser."""
+    game_dir = cfg.game_dir.resolve()
+    sources = conn.execute(
+        "SELECT s.id, s.filename, s.sha256 FROM source s WHERE s.kind = 'own_report' "
+        "AND EXISTS (SELECT 1 FROM unit_turn u WHERE u.source_id = s.id AND u.carry_json IS NULL)"
+    ).fetchall()
+    with conn:
+        for source in sources:
+            if not source["filename"]:
+                continue
+            path = (game_dir / source["filename"]).resolve()
+            if not path.is_relative_to(game_dir) or path.suffix.lower() not in {".docx", ".txt"}:
+                continue
+            try:
+                if path.is_file() and sha256(path) == source["sha256"]:
+                    _fill_planner_fields(conn, cfg, terrain, source["id"], path)
+            except (OSError, zipfile.BadZipFile, KeyError, ParseError):
+                continue  # the original report can still be re-imported
+
+
 def import_report(conn, cfg, terrain, path, force=False):
     """Parse one report file into the DB. Returns (source_id, report, skipped)."""
     path = Path(path)
     digest = sha256(path)
     old = conn.execute("SELECT id FROM source WHERE sha256 = ?", (digest,)).fetchone()
     if old and not force:
+        if conn.execute("SELECT 1 FROM unit_turn WHERE source_id = ? AND carry_json IS NULL LIMIT 1",
+                        (old["id"],)).fetchone():
+            with conn:
+                _fill_planner_fields(conn, cfg, terrain, old["id"], path)
         return old["id"], None, True
     if old:
         conn.execute("DELETE FROM source WHERE id = ?", (old["id"],))
@@ -76,9 +116,11 @@ def import_report(conn, cfg, terrain, path, force=False):
             conn.execute("UPDATE unit SET name = ? WHERE id = ?", (u.name, u.unit))
         h, p = u.hex or (None, None), u.prev_hex or (None, None)
         conn.execute(
-            "INSERT OR REPLACE INTO unit_turn VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO unit_turn (unit, turn, source_id, gx, gy, prev_gx, prev_gy, hex_text, status,"
+            " inventory_json, skills_json, morale, carry_json, activities, transfers_json, notes_json, final, goods_tribe)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (u.unit, rep.turn, sid, h[0], h[1], p[0], p[1], u.hex_text, u.status,
-             json.dumps(u.inventory), json.dumps(u.skills), u.morale))
+             json.dumps(u.inventory), json.dumps(u.skills), u.morale, *_planner_fields(u)))
         for party, steps in u.paths.items():
             for s in steps:
                 conn.execute("INSERT INTO unit_path VALUES (?,?,?,?,?,?,?,?,?)",

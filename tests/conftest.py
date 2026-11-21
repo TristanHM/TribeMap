@@ -8,6 +8,11 @@ from tribemap.terrain import TerrainTable
 SAMPLE = """Tribe 0999, , Current Hex = QB 1016, (Previous Hex = QB 1017)
 Current Turn 906-05 (#77), Summer, FINE\tNext Turn 906-06 (#78), 18/11/2026
 Received: $0, Cost: $ 0\tCredit: $ 200
+Chief, cant use Teachers in 3rd spot if also attempted a Group A skill in the turn.
+Tribe Activities, 40 people hunted 90 provs (using 10 trap), 22 herders allocated, 22 actual herders required
+Final Activities: Provs eaten: 3200 Provs,
+Transfer goods to 0999e1: 10 WARRIORS, 12 HORSE,
+Movement Weight: 90,500 Walking Capacity: 120,000 Mounted Capacity: 0
 Tribe Movement: Move N-PR, \\
 Scout 1:Scout N-PR, \\N-BH, \\N-BH, Lcm NW
 Scout 2:Scout NW-PR,Find Salt\\NW-SW, Lcm NW,River NW
@@ -27,6 +32,9 @@ None
 Skills:
 Adm 2, Dip 2, Sct 2,
 Morale : \t1
+Weight: 90,500
+Walking CC: \t\t\t120,000
+Mounted CC: \t\t\t0
 Something odd near the River
 """
 

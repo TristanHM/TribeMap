@@ -355,10 +355,13 @@ def cmd_plan_show(args, cfg, conn, terrain):
 def cmd_plan_export(args, cfg, conn, terrain):
     xlsx, js, tsv = plans.export(conn, cfg, args.turn, args.out, variant=args.variant)
     text = [f"Wrote {xlsx}", f"Wrote {js}"]
+    review = plans.review(conn, args.turn, args.variant)
+    text.extend(f"{i['unit']}: {i['message']}" for i in review["issues"])
     if args.tsv:
-        for sheet, body in tsv.items():
+        for sheet in review["sheets"]:
+            body = tsv[sheet["name"]]
             if body:
-                text += [f"--- {sheet} (paste at B2) ---", body]
+                text += [f"--- {sheet['name']} (paste at {sheet['paste_at']}) ---", body]
     emit(args, {"xlsx": str(xlsx), "json": str(js), "tsv": tsv}, "\n".join(text))
 
 

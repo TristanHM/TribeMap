@@ -138,3 +138,12 @@ def test_the_clan_comes_from_the_first_report(cfg, terrain, sample_file):
     importer.import_report(conn, cfg, terrain, sample_file)
     conn.close()
     assert cfg.clan == "0999" and config.load().clan == "0999"   # kept in config.toml
+
+
+def test_carry_activities_transfers_and_gm_notes(terrain):
+    u = parse(terrain).units[0]
+    assert u.carry == {"weight": 90500, "walking": 120000, "mounted": 0}
+    assert u.activities.startswith("40 people hunted 90 provs") and u.final == "Provs eaten: 3200 Provs"
+    assert u.transfers == ["Transfer goods to 0999e1: 10 WARRIORS, 12 HORSE"]
+    assert u.notes == ["cant use Teachers in 3rd spot if also attempted a Group A skill in the turn."]
+    assert "Ships" not in u.inventory   # the CC lines aren't goods

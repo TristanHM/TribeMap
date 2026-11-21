@@ -15,6 +15,8 @@ there's nothing to install.
 - **Plans your turn.** Draw moves and scout routes on the map with the movement points worked out step by step, so
   you can see how far each one really gets before you send your orders. It can suggest scout routes that reach the
   most unknown ground, and exports your plan as a sheet to paste into your orders.
+- **Plans your orders.** In the Planner tab, choose a tribe or element to edit activities, transfers, skills and GM
+  actions, view the goods history, and review orders. **Export Orders (.xlsx)** creates a workbook to copy from.
 - **Looks back.** Replay the map as it was at any earlier turn, or show where each tribe and element has been over a
   range of turns.
 - **Shares.** Export your map as a `.wxx` file for Clan Cartographer or Worldographer. Your units and plans are never

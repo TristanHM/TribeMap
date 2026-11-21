@@ -1,0 +1,208 @@
+activity,skill,level,item,makes,people,inputs,also_needs,notes,section,page,good
+Armour,Armour,2,Scutum,1,2,COAL 15; BRONZE 5,,bronze shield,13.1.1,54,SCUTUM
+Armour,Armour,3,Haubes,1,2,COAL 10; BRONZE 3,,bronze helm,13.1.1,54,HAUBE
+Armour,Armour,3,Shields,1,2,COAL 30; IRON 5,,,13.1.1,54,SHIELD
+Armour,Armour,4,Cuirass,1,3,COAL 20; BRONZE 30,,bronze breastplate,13.1.1,54,CUIRASS
+Armour,Armour,4,Helms,1,2,COAL 20; IRON 3,,,13.1.1,54,HELM
+Armour,Armour,6,Chain Mail,1,4,COAL 40; IRON 18,,,13.1.1,54,CHAIN
+Armour,Armour,8,Breastplate,1,4,COAL 40; IRON 20,,,13.1.1,54,BREASTPLATE
+Bonework,Bonework,1,Bone Axe,1,2,BONES 1; CLUB 1; LEATHER 1,,+ 1 club & 1 leather,13.1.3,54,BONE AXE
+Bonework,Bonework,3,Bone Spear,1,2,BONES 1,forest or jungle (or 1 person with 1 shaft),or 1 person with 1 shaft,13.1.3,54,BONE SPEAR
+Bonework,Bonework,3,Bone Arrow,10,1,BONES 10,,1 person makes 10 Bone Arrows,13.1.3,54,BONE ARROW
+Bonework,Bonework,4,Bone Frames,1,2,BONES 3,,,13.1.3,54,BONE FRAME
+Bonework,Bonework,8,Bone Armour,1,4,BONES 10; LEATHER 2,,+ 2 leather,13.1.3,54,BONE ARMOUR
+Glasswork,Glasswork,1,Beads,10,1,SAND 9; LEAD 1; COAL 5,1 Glasspipe per 10 workers,Requires one Glasspipe per 10 users.,13.1.11,57,BEADS
+Glasswork,Glasswork,4,Beaker,1,1,SAND 9; LEAD 1; COAL 10,1 Glasspipe per 10 workers,Requires one Glasspipe per 10 users.,13.1.11,57,BEAKERS
+Glasswork,Glasswork,4,Glass Pane,1,1,SAND 20; LEAD 4; COAL 20,,Used in some higher end buildings. 10 lb,13.1.11,57,
+Glasswork,Glasswork,6,Bottle,1,1,SAND 12; LEAD 2; COAL 12; CLAY 25,1 Glasspipe per 10 workers,Requires one Glasspipe per 10 users. Weighs 2 lbs full. 50 Bottles = 1 Barrel volume.,13.1.11,57,BOTTLE
+Glasswork,Glasswork,7,Bottle Perfume,1,1,SAND 2; LEAD 1; COAL 2,1 Glasspipe per 10 workers,Requires one Glasspipe per 10 users. Weighs 0. Under development,13.1.11,57,
+Glasswork,Glasswork,8,Lens,1,5,SAND 45; LEAD 5; COAL 50,1 Glasspipe per 10 workers,Requires one Glasspipe per 10 users.,13.1.11,57,LENS
+Jewellery,Jewellery,1,Trinket,1,1,COPPER 1,,,13.1.17,59,TRINKET
+Jewellery,Jewellery,3,Ornament,1,1,COAL 2; COPPER 2,,,13.1.17,59,ORNAMENT
+Jewellery,Jewellery,5,Goldwork,1,1,GOLD 15,,,13.1.17,59,GOLDWORK
+Jewellery,Jewellery,8,Inlay,1,2,GOLD 20; JADE 1,,,13.1.17,59,INLAY
+Leatherwork,Leatherwork,1,Hoods,2,1,LEATHER 2,,light head protection,13.1.18,60,HOOD
+Leatherwork,Leatherwork,2,Heaters,1,1,LEATHER 3; FRAME 1,,a form of shield,13.1.18,60,HEATER
+Leatherwork,Leatherwork,2,Sling,1,1,LEATHER 1,,,13.1.18,60,SLING
+Leatherwork,Leatherwork,3,Jerkins,1,2,LEATHER 4,,a type of armour,13.1.18,60,JERKIN
+Leatherwork,Leatherwork,3,Trews,1,1,LEATHER 2,,leg armour,13.1.18,60,TREWS
+Leatherwork,Leatherwork,4,Backpack,1,2,LEATHER 2,,+30lb to a Warrior or Active carrying capacity,13.1.18,60,BACKPACK
+Leatherwork,Leatherwork,4,Rope,1,2,LEATHER 5,,,13.1.18,60,ROPE
+Leatherwork,Leatherwork,5,Saddlebags,1,2,LEATHER 4,,"+100lb (+50lb when scouting) to a horse’s capacity, also add capacity for Camels",13.1.18,60,SADDLEBAG
+Leatherwork,Leatherwork,6,Saddle,1,3,LEATHER 4,,See section 29.31 Research.,13.1.18,60,SADDLE
+Metalwork,Metalwork,1,Pellets,20,1,COAL 1; LEAD 10,,"10 used per slinger in missile phase of combat; pellets improve the effectiveness of slings in battle. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,PELLET
+Metalwork,Metalwork,2,Quarrels,10,1,IRON 1; COAL 10,,"IRON ONLY for use with arbalest (similar improvements to arrows). Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,QUARREL
+Metalwork,Metalwork,2,Shovel,1,2,IRON 2; COAL 10,,"Doubles digging rate for Ditch/Moat/Sand/Clay. Adds 50% to mining output. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,SHOVEL
+Metalwork,Metalwork,2,Trap,1,1,IRON 1; COAL 4,,"See Hunting, each hunter can use up to 5 traps. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,TRAP
+Metalwork,Metalwork,3,Barrel,1,2,IRON 2; COAL 4; LOG 1,,"Used for water at sea, alcohol, etc. See notes under section 11.2 Weights (some examples). Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,BARREL
+Metalwork,Metalwork,3,Mattock,1,2,IRON 8; COAL 25,,"A quarrier with a mattock produces 10 stones. +50% to mining. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,MATTOCK
+Metalwork,Metalwork,3,Pick,1,2,IRON 3; COAL 15,,"Double mining output, +50% to digging Ditch/Moat. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,PICK
+Metalwork,Metalwork,4,Adze,1,2,IRON 4; COAL 20,,"Person with an adze fells 8 logs (Forestry). Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,ADZE
+Metalwork,Metalwork,4,Hoe,1,2,IRON 3; COAL 10,,"A person with a hoe can plow 2 acres. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,HOE
+Metalwork,Metalwork,4,Shackle,1,1,IRON 2; COAL 15,,"Shackled slaves count as half towards limits of Slaves held by a unit. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,SHACKLE
+Metalwork,Metalwork,5,Lamp,1,1,BRASS 1; SILVER 50; COTTON 20; OIL 20,,"Required for Lodging, Permanent Lamp. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,LAMP
+Metalwork,Metalwork,5,Scythe,1,2,IRON 3; COAL 15,,"Doubles the acres harvested by a person for grain, sugar and fodder. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,SCYTHE
+Metalwork,Metalwork,6,Plow,1,5,IRON 10; COAL 25; LOG 1,,"A person with a plow and a horse/cow* can plow 8 acres. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,PLOW
+Metalwork,Metalwork,8,Cauldron,1,4,IRON 20; COAL 100,,"See candles and cuirboilli under section 13.1.34. Waxwork. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,CAULDRON
+Metalwork,Metalwork,9,Glasspipe,1,3,IRON 2; COAL 40,,"For working glass. Bronze or brass may replace iron, with 75% of the coal.",13.1.21,61,GLASSPIPE
+Music,Music,1,Drum,1,2,LOG 1; PARCHMENT 1,Woodwork 3,,13.1.23,62,DRUM
+Music,Music,3,Horn,1,2,LOG 1,Woodwork 5,,13.1.23,62,HORN
+Music,Music,4,Flute,1,2,LOG 1,Woodwork 4,,13.1.23,62,FLUTE
+Music,Music,6,Trumpet,1,3,BRASS 4; COAL 20,Metalwork 6,,13.1.23,62,TRUMPET
+Music,Music,7,Harp,1,5,LOG 2; STRING 30,Woodwork 6,,13.1.23,62,HARP
+Music,Music,8,Lute,1,4,LOG 1; STRING 12,Woodwork 8,,13.1.23,62,LUTE
+Pottery,Pottery,1,Ewer,1,1,COAL 3; CLAY 5,,Holds 20; weighs 5 empty.,13.1.24,62,EWER
+Pottery,Pottery,1,Jar,1,2,COAL 5; CLAY 10,,Holds 50; weighs 10 empty.,13.1.24,62,JAR
+Pottery,Pottery,1,Urn,1,4,COAL 10; CLAY 20,,Holds 150; weighs 20 empty.,13.1.24,62,URN
+Sewing,Sewing,2,Bladder,2,1,GUT 2; LEATHER 1,,"2 gut, 1 leather (holds 10lbs water)",13.1.28,64,BLADDER
+Sewing,Sewing,3,Ring mail,1,2,JERKIN 1; IRON 8; COAL 20,Armour 4,"1 jerkin, 8 iron, 20 coal, Armour 4",13.1.28,64,RING
+Sewing,Sewing,3,Scale mail,1,2,JERKIN 1; BRONZE 10; COAL 15,Armour 3,"1 jerkin, 10 bronze, 15 coal, Armour 3",13.1.28,64,SCALE
+Sewing,Sewing,4,Cloth,1,5,PARCHMENT 20,,20 parchment,13.1.28,64,CLOTH
+Sewing,Sewing,5,Fur Jacket,10,10,FUR 20; COTTON 1,,"20 Furs, 1 Cotton",13.1.28,64,FUR JACKET
+Sewing,Sewing,6,Fur Coat,10,15,FUR 30; COTTON 2,,"30 Furs, 2 Cotton",13.1.28,64,FUR COAT
+Sewing,Sewing,7,Curtains,1,2,COTTON 300,,"300 Cotton per Curtain, weighs 3lb",13.1.28,64,CURTAINS
+Siege Equipment,Siege Equipment,3,Ram,1,10,LOG 5; IRON 50,,,13.1.29,64,RAM
+Siege Equipment,Siege Equipment,8,Ballista,1,10,LOG 3; COAL 20; IRON 3; WAGON 1,,Treated as cargo. Weighs 300,13.1.29,64,BALLISTA
+Siege Equipment,Siege Equipment,8,Onager,1,15,LOG 12; COAL 30; IRON 4; ROPE 4,Woodwork 6,Also requires Woodwork 6. Weighs 1000,13.1.29,64,ONAGER
+Siege Equipment,Siege Equipment,10,Catapult,1,15,LOG 10; COAL 30; IRON 2; ROPE 4,,2 horses/cattle to transport. Weighs 1000,13.1.29,64,CATAPULTS
+Stonework,Stonework,2,Stone axe,1,1,STONE 1; CLUB 1; LEATHER 1,,With 1 club and 1 leather.,13.1.32,66,STONE AXE
+Stonework,Stonework,4,Stone spear,1,1,STONE 1; SHAFT 1,,With 1 shaft.,13.1.32,66,STONE SPEAR
+Stonework,Stonework,5,Sculpture,1,4,STONE 5,,,13.1.32,66,SCULPTURE
+Stonework,Stonework,6,Millstone,1,10,STONE 10,,,13.1.32,66,MILLSTONE
+Stonework,Stonework,8,Statue,1,10,STONE 10,,,13.1.32,66,STATUE
+Tanning,Tanning,1,Leather,4,1,SKIN 4; BARK 10,,Furs can be tanned instead of skins. Workers limited to 10 per level.,13.1.33,67,LEATHER
+Waxwork,Waxwork,1,Parchment,5,1,WAX 1; SKIN 5,,+ 5 skin.,13.1.34,67,PARCHMENT
+Waxwork,Waxwork,2,Candles,20,4,WAX 20; COTTON 1; COAL 5,1 Cauldron (kept),,13.1.34,67,CANDLE
+Waxwork,Waxwork,2,Strings,5,1,WAX 1; COTTON 1,,Can use gut instead of cotton.,13.1.34,67,STRING
+Waxwork,Waxwork,3,Seal,1,1,WAX 5; GOLD 1,,+ 1 Gold. 1 Seal per enduring truce.,13.1.34,67,
+Waxwork,Waxwork,4,Cuirboilli,1,2,WAX 2; COAL 2; LEATHER 2,1 Cauldron (kept),Can make up to 10 cuirboilli.,13.1.34,67,CUIRBOILLI
+Weapons,Weapons,1,Shafts,1,1,,forest or jungle,"Only in forests/jungles, see Spear, etc.",13.1.35,68,SHAFT
+Weapons,Weapons,1,Bow,1,2,STRING 1,deciduous forest or jungle,"Using 1 string, #only in decid/jungle.",13.1.35,68,BOW
+Weapons,Weapons,1,Bow,1,1,STRING 1; STAVE 1,,Using 1 string and 1 stave in any terrain.,13.1.35,68,BOW
+Weapons,Weapons,1,Slings,10,5,CLOTH 1,,"Using 1 bolt of cloth, see also Weaving.",13.1.35,68,SLING
+Weapons,Weapons,1,Spetums,1,2,COAL 5; BRONZE 2,forest or jungle,Only in forests/jungles.,13.1.35,68,SPETUM
+Weapons,Weapons,1,Spetums,1,1,COAL 5; BRONZE 2; SHAFT 1,,+1 shaft...can be made anywhere.,13.1.35,68,SPETUM
+Weapons,Weapons,1,Staves,1,1,,deciduous forest or jungle,Only in deciduous forest/jungle.,13.1.35,68,STAVE
+Weapons,Weapons,2,Spear,1,2,COAL 10; IRON 2,forest or jungle,Only in forest/jungle.,13.1.35,68,SPEAR
+Weapons,Weapons,2,Spear & Shaft,1,1,COAL 10; IRON 2; SHAFT 1,,+1 shaft/bone spear. Can be made anywhere.,13.1.35,68,SPEAR
+Weapons,Weapons,3,Mace,1,2,COAL 30; IRON 6,,"Iron, or bronze with less coal.",13.1.35,68,MACE
+Weapons,Weapons,3,Mace,1,2,COAL 20; BRONZE 6,,The bronze version.,13.1.35,68,MACE
+Weapons,Weapons,4,Axes,1,2,COAL 20; IRON 4,,,13.1.35,68,AXE
+Weapons,Weapons,4,Falchion,1,2,COAL 15; BRONZE 5,,,13.1.35,68,FALCHION
+Weapons,Weapons,6,Swords,1,3,COAL 30; IRON 5,,,13.1.35,68,SWORD
+Weapons,Weapons,8,Arbalests,1,3,COAL 20; IRON 2; STRING 1,,"Require 1 string each. Can use brass. Iron, or bronze with less coal.",13.1.35,68,ARBALEST
+Weapons,Weapons,8,Arbalests,1,3,COAL 15; BRONZE 2; STRING 1,,Require 1 string each. Can use brass. The bronze version.,13.1.35,68,ARBALEST
+Weaving,Weaving,1,Ropes,2,1,COTTON 20,,,13.1.36,68,ROPE
+Weaving,Weaving,2,Slings,2,1,COTTON 1,,,13.1.36,68,SLING
+Weaving,Weaving,3,Net,1,2,COTTON 10,,Helps in fishing.,13.1.36,68,NET
+Weaving,Weaving,3,Rope,1,2,GUT 10; BARK 10,,,13.1.36,68,ROPE
+Weaving,Weaving,3,Snares,2,1,ROPE 1,,Helps in hunting.,13.1.36,68,SNARE
+Weaving,Weaving,4,Rug,1,5,COTTON 20,,,13.1.36,68,RUG
+Weaving,Weaving,5,Cloth,1,5,COTTON 15,,,13.1.36,68,CLOTH
+Weaving,Weaving,5,Net,1,3,GUT 10; BARK 10,,Helps in fishing.,13.1.36,68,NET
+Weaving,Weaving,6,Carpet,1,10,COTTON 50,,,13.1.36,68,CARPET
+Weaving,Weaving,8,Tapestry,1,20,COTTON 100,,,13.1.36,68,TAPESTRY
+Woodwork,Woodwork,1,Clubs,4,1,,forest or jungle (else 1 log per 4 clubs),"No logs needed in forest/jungle, if not in a forest or jungle you may make 4 clubs per log.",13.1.37,69,CLUB
+Woodwork,Woodwork,2,Paddle,1,1,LOG 1,,,13.1.37,69,PADDLE
+Woodwork,Woodwork,3,Rake,1,1,LOG 1,,A person with a rake can plow 1 acre.,13.1.37,69,RAKE
+Woodwork,Woodwork,3,Wagon,1,10,LOG 6,,"A wagon needs 2 Cattle or Horses to pull, or 1 Elephant to carry.",13.1.37,69,WAGON
+Woodwork,Woodwork,3,Oar,1,1,LOG 1,,,13.1.37,69,OAR
+Woodwork,Woodwork,4,Frame,2,2,LOG 1,,See section 13.1.18. Leatherwork.,13.1.37,69,FRAME
+Woodwork,Woodwork,4,Chair,1,1,LOG 1; WAX 2; COIN 1,,"Wax 2, Coin 1, weighs 30 lbs.",13.1.37,69,CHAIR
+Woodwork,Woodwork,4,Bench,1,2,LOG 2; WAX 2; COIN 5,,"Wax 2, Coin 5, weighs 150 lbs.",13.1.37,69,BENCH
+Woodwork,Woodwork,5,Bed,1,2,LOG 2; WAX 10; COIN 5,,"Wax 10, Coin 5, weighs 150lbs",13.1.37,69,BED
+Woodwork,Woodwork,5,Podium,1,5,LOG 3,,Weighs 400 lbs,13.1.37,69,PODIUM
+Woodwork,Woodwork,5,Table,1,2,LOG 5; WAX 10; COIN 5,,"Wax 10, Coin 5, weighs 150 lbs.",13.1.37,69,TABLE
+Skinning,Skinning,,Skin,3,1,GOAT 3,,4 provs a goat are gained too. Can be combined with Gutting and Boning.,13.1.30; 3.15,65,SKIN
+Gutting,Gutting,,Gut,12,1,GOAT 6,,,13.1.12; 3.15,57,GUT
+Boning,Boning,,Bones,12,1,GOAT 6,,,13.1.2; 3.15,54,BONES
+Skinning,Skinning,,Skin,2,1,CATTLE 1,,20 provs a cattle are gained too. Can be combined with Gutting and Boning.,13.1.30; 3.15,65,SKIN
+Gutting,Gutting,,Gut,12,1,CATTLE 3,,,13.1.12; 3.15,57,GUT
+Boning,Boning,,Bones,12,1,CATTLE 3,,,13.1.2; 3.15,54,BONES
+Skinning,Skinning,,Skin,3,1,HORSE 1,,30 provs a horse are gained too. Can be combined with Gutting and Boning.,13.1.30; 3.15,65,SKIN
+Gutting,Gutting,,Gut,12,1,HORSE 2,,,13.1.12; 3.15,57,GUT
+Boning,Boning,,Bones,12,1,HORSE 2,,,13.1.2; 3.15,54,BONES
+Skinning,Skinning,,Skin,4,1,DOG 4,,3 provs a dog are gained too. Can be combined with Gutting and Boning.,13.1.30; 3.15,65,SKIN
+Gutting,Gutting,,Gut,8,1,DOG 8,,,13.1.12; 3.15,57,GUT
+Boning,Boning,,Bones,8,1,DOG 8,,,13.1.2; 3.15,54,BONES
+Skinning,Skinning,,Skin,3,1,ELEPHANT 0.5,,60 provs a elephant are gained too. Can be combined with Gutting and Boning.,13.1.30; 3.15,65,SKIN
+Gutting,Gutting,,Gut,12,1,ELEPHANT 1,,,13.1.12; 3.15,57,GUT
+Boning,Boning,,Bones,12,1,ELEPHANT 1,,,13.1.2; 3.15,54,BONES
+Curing,Curing,,Leather,2,1,SKIN 2; GUT 5,,Furs can be cured instead of skins.,13.1.5,55,LEATHER
+Dressing,Dressing,,Leather,4,1,SKIN 4; SALT 1,,Furs can be dressed instead of skins.,13.1.6,55,LEATHER
+Cooking,Cooking,,Provs,4,1,GUT 40,,"Or 60 grapes, or 20 honey.",13.1.4,55,PROVS
+Cooking,Cooking,,Provs,6,1,GRAIN 180,,,13.1.4,55,PROVS
+Fletching,Fletching,,Arrow,10,1,COAL 10; IRON 1,,Bronze or steel instead of iron makes arrows of that kind. No coke.,13.1.7,55,ARROW
+Forestry,Forestry,,Log,4,1,,forest or jungle,8 with an adze. Logs can't be used the turn they're cut.,13.1.9,56,LOG
+Forestry,Forestry,,Bark,20,1,,forest or jungle,,13.1.9,56,BARK
+Quarrying,Quarrying,,Stone,5,1,,hills or mountains,10 with a mattock.,13.1.25,63,STONE
+Gathering,,,Fodder,50,1,,prairie or grassy hills,100 with a scythe.,13.1.8,55,FODDER
+Gathering,,,Sand,20,1,,"a river hexside, or next to ocean or lake",Double with a shovel.,13.1.8,55,SAND
+Gathering,,,Clay,20,1,,next to a river or lake,Double with a shovel.,13.1.8,55,CLAY
+Gathering,,,Oil,10,1,GUT 3000,,Or 10 olives. 1 jar per 50 oil held.,13.1.8,55,OIL
+Gathering,,,Oil,10,1,OLIVES 10,,1 jar per 50 oil held.,13.1.8,55,OIL
+Baking,Baking,,Bread,5,1,GRAIN 20,a Bakery,"1 bread = 1 prov, eaten the turn it's made.",14.4.1,73,BREAD
+Baking,Baking,,Bread,15,1,FLOUR 40,a Bakery,,14.4.1,73,BREAD
+Brick Making,Brick Making,,Stone,30,1,CLAY 20; FODDER 10; COAL 4,a Brickworks,"120 bricks, recorded as 30 stone.",14.5.1,73,STONE
+Brick Making,Brick Making,,House Bricks,160,1,CLAY 20; FODDER 20; COAL 6,a Brickworks,For dwellings only.,14.5.1,73,HOUSE BRICKS
+Charring,Forestry,5,Coal,10,1,LOG 2,a Charhouse,"Charcoal, used as 10 coal.",14.6.1,74,COAL
+Distilling,Distilling,2,Ale,1,,GRAIN 100,a Distillery and a barrel,Per barrel.,14.7.1,75,ALE
+Distilling,Distilling,4,Mead,1,,HONEY 20,a Distillery and a barrel,Per barrel.,14.7.1,75,MEAD
+Distilling,Distilling,5,Ale,1,,BARK 50; SUGAR 50,a Distillery and a barrel,Per barrel.,14.7.1,75,ALE
+Distilling,Distilling,6,Wine,1,,GRAPE 100,a Distillery and a barrel,Per barrel.,14.7.1,75,WINE
+Distilling,Distilling,8,Rum,1,,SUGAR 100,a Distillery and a barrel,Per barrel.,14.7.1,75,RUM
+Distilling,Distilling,9,Brandy,1,,GRAPE 50; SUGAR 50,a Distillery and a barrel,Per barrel.,14.7.1,75,BRANDY
+Milling,Milling,,Flour,120,1,GRAIN 80,a Mill (2 cattle or horses),,14.11.1,85,FLOUR
+Refining,Refining,,Iron,15,,IRON ORE 20; COAL 10,a Refinery with a Smelter,,14.12.1,86,IRON
+Refining,Refining,,Copper,15,,COPPER ORE 20; COAL 4,a Refinery with a Smelter,,14.12.1,86,COPPER
+Refining,Refining,,Tin,15,,TIN ORE 20; COAL 6,a Refinery with a Smelter,,14.12.1,86,TIN
+Refining,Refining,,Zinc,15,,ZINC ORE 20; COAL 8,a Refinery with a Smelter,,14.12.1,86,ZINC
+Refining,Refining,,Lead,15,,LEAD ORE 20; COAL 6,a Refinery with a Smelter,,14.12.1,86,LEAD
+Refining,Refining,,Bronze,30,,COPPER 25; TIN 5; COAL 10,a Refinery with a Smelter,,14.12.1,86,BRONZE
+Refining,Refining,,Brass,20,,COPPER 16; ZINC 4; COAL 10,a Refinery with a Smelter,,14.12.1,86,BRASS
+Refining,Refining,,Nickel,15,,NICKEL ORE 20; COAL 6,a Refinery with a Smelter,,14.12.1,86,NICKEL
+Refining,Refining,,Pewter,40,,LEAD 8; TIN 32; COAL 10,a Refinery with a Smelter,,14.12.1,86,PEWTER
+Engineering,Engineering,2,Ditch,1,,,,,14.8,75,
+Engineering,Engineering,2,Lodging,1,,LOG 200,,Require must also have 1 lamp in inventory for each lodging (new or existing). [Rule not in use.],14.8,75,
+Engineering,Engineering,2,Meeting House,1,,LOG 100,,Required to start a village.,14.8,75,
+Engineering,Engineering,2,Refinery,1,,LOG 100,,Logs installed at 2 per person.,14.8,75,
+Engineering,Engineering,2,Trading Post,1,,LOG 100,,For trading at Fair. See 15 The Fair and Trading.,14.8,75,
+Engineering,Engineering,3,Bakery,1,,LOG 40,,,14.8,75,
+Engineering,Engineering,3,Moat,1,,,,,14.8,75,
+Engineering,Engineering,4,Distillery,1,,LOG 80,,,14.8,75,
+Engineering,Engineering,4,Jetty,1,,LOG 100,,,14.8,75,
+Engineering,Engineering,4,Palisade,1,,LOG 3/yd,,Logs depends on extent of fortification.,14.8,75,
+Engineering,Engineering,5,Bank,1,,IRON 200; STONE 4000,,Requires Economics 10 in the Clan to operate.,14.8,75,
+Engineering,Engineering,5,Boatshed,1,,LOG 20,,,14.8,75,
+Engineering,Engineering,5,Brickworks,1,,LOG 80,,,14.8,75,
+Engineering,Engineering,5,Charhouse,1,,LOG 100,,Also see 13.1.9. Forestry.,14.8,75,
+Engineering,Engineering,5,Mill,1,,LOG 110; IRON 20; COAL 100; ROPE 1; MILLSTONE 1,Metalwork 3,Also requires Metalwork 3. 1 Rope and 1 Millstone.,14.8,75,
+Engineering,Engineering,5,Wooden Tower,1,,LOG 200,,,14.8,75,
+Engineering,Engineering,6,Apiary,1,,LOG 100; IRON 20; COAL 100,Metalwork 3,Also requires Metalwork 3. 2 Cloth or 20 Leather.,14.8,75,
+Engineering,Engineering,6,Apiary,1,,LOG 160,Woodwork 4,Also requires Woodwork 4. 2 Cloth or 20 Leather.,14.8,75,
+Engineering,Engineering,6,Shipyard,1,,LOG 50; IRON 6; COAL 20,,"Or 9 Brass/Bronze, 15 coal.",14.8,75,
+Engineering,Engineering,"7,8,9",Stone Wall,1,,,,Stones needed depends on height of wall and extent of fortification. See 18.5.6. Stone Walls and Stone Towers.,14.8,75,
+Engineering,Engineering,8,Stone Tower,1,,STONE 3000,,,14.8,75,
+Engineering,,,Smelter,1,5,IRON 50; COAL 200,a Refinery,Bronze or brass instead of iron. No skill needed.,14.12,85,
+Engineering,,,Oven,1,,COAL 200; IRON 100,a Bakery,Installed at 10 lb of metal a person; no skill needed.,14.4.2,73,
+Engineering,,,Burner,1,,COAL 200; IRON 50,a Charhouse,Installed at 10 lb of metal a person; no skill needed.,14.6.2,74,
+Stonework,Stonework,4,Baking ovens,1,,STONE 300,a village,"300 per 10 people who can use, installed @ 5/person.",14.13,86,
+Stonework,Stonework,5,Brickwork kilns,1,,STONE 300,a village,"300 per 10 people who can use, installed @ 5/person.",14.13,86,
+Stonework,Stonework,6,Charring Burners,1,,STONE 300,a village,"300 per 10 people who can use, installed @ 5/person.",14.13,86,
+Stonework,Stonework,8,Refining smelter,1,,STONE 400,a village,"400 per 10 people who can use, installed @ 5/person.",14.13,86,
+Engineering,Engineering,5,Well (flat),1,,STONE 210; ROPE 1,flat terrain,,18.5.8,129,
+Engineering,Engineering,6,Well (hills),1,,STONE 300; ROPE 1,hills terrain,,18.5.8,129,
+Engineering,Engineering,7,Well (low mtns),1,,STONE 480; ROPE 2,low mtns terrain,,18.5.8,129,
+Engineering,Engineering,8,Well (high mtns),1,,STONE 600; ROPE 2,high mtns terrain,,18.5.8,129,
+Shipbuilding,Shipbuilding,1,Boat (Lifeboat),1,5,LOG 10,"Woodwork 5, a Shipyard",Weighs 1250. Sheathing -; ram -; oars/paddles P.,20.4,134,BOAT
+Shipbuilding,Shipbuilding,2,Ferry,1,22,LOG 40; BRASS 10; COAL 40,"Woodwork 5, Metalwork 3, a Shipyard",Weighs 10000. Sheathing -; ram -; oars/paddles -.,20.4,134,FERRY
+Shipbuilding,Shipbuilding,2,Fisher,1,18,LOG 20; BRASS 5; COAL 20; LEATHER 2; CLOTH 2; ROPE 3,"Woodwork 6, Metalwork 3, a Shipyard",Weighs 2500. Sheathing 20; ram No; oars/paddles P.,20.4,134,FISHER
+Shipbuilding,Shipbuilding,3,Barges,1,32,LOG 60; BRASS 10; COAL 40,"Woodwork 5, Metalwork 3, a Shipyard",Weighs 15000. Sheathing -; ram -; oars/paddles none.,20.4,134,BARGE
+Shipbuilding,Shipbuilding,3,Coaster,1,36,LOG 40; BRASS 10; COAL 40; LEATHER 6; CLOTH 4; ROPE 6,"Woodwork 6, Metalwork 3, a Shipyard",Weighs 5000. Sheathing 40; ram No; oars/paddles NA.,20.4,134,COASTER
+Shipbuilding,Shipbuilding,4,Sm Galley,1,68,LOG 100; BRASS 40; COAL 200; LEATHER 10,"Woodwork 7, Metalwork 5, a Shipyard",Weighs 12500. Sheathing 100; ram Yes; oars/paddles O.,20.4,134,SMALL GALLEY
+Shipbuilding,Shipbuilding,5,Md Galley,1,110,LOG 160; BRASS 60; COAL 300; LEATHER 15,"Woodwork 7, Metalwork 5, a Shipyard",Weighs 20000. Sheathing 180; ram Yes; oars/paddles O.,20.4,134,MEDIUM GALLEY
+Shipbuilding,Shipbuilding,6,Lg Galley,1,156,LOG 220; BRASS 80; COAL 400; LEATHER 20,"Woodwork 7, Metalwork 5, a Shipyard",Weighs 27500. Sheathing 300; ram Yes; oars/paddles O.,20.4,134,LARGE GALLEY
+Shipbuilding,Shipbuilding,6,Trader,1,144,LOG 160; BRASS 25; COAL 100; LEATHER 40; CLOTH 20; ROPE 24,"Woodwork 7, Metalwork 4, a Shipyard",Weighs 20000. Sheathing 150; ram No; oars/paddles NA.,20.4,134,TRADER
+Shipbuilding,Shipbuilding,8,Longship,1,122,LOG 150; BRASS 20; COAL 100; LEATHER 10; CLOTH 15; ROPE 18,"Woodwork 8, Metalwork 4, a Shipyard",Weighs 18750. Sheathing 100; ram No; oars/paddles O.,20.4,134,LONGSHIP
+Shipbuilding,Shipbuilding,9,Merchant,1,138,LOG 160; BRASS 40; COAL 200; LEATHER 30; CLOTH 15; ROPE 20,"Woodwork 8, Metalwork 7, a Shipyard",Weighs 20000. Sheathing 150; ram No; oars/paddles O.,20.4,134,MERCHANT
+Shipbuilding,Shipbuilding,9,Warship,1,160,LOG 200; BRASS 50; COAL 250; LEATHER 30; CLOTH 15; ROPE 20,"Woodwork 8, Metalwork 7, a Shipyard",Weighs 25000. Sheathing 150; ram Yes; oars/paddles O.,20.4,134,WARSHIP

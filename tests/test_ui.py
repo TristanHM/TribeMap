@@ -398,3 +398,94 @@ def test_layers_and_legend_fold_away(page):
     page.click("#layersFold summary")
     assert page.is_visible("#layers")
     assert page.locator("details#historyFold.fold").count() == 1   # History folds the same way
+
+
+def test_planner_tab(page):
+    assert page.is_visible("#gotoText")
+    page.click("#tabPlanner")
+    row = page.locator('#planner tr[data-plunit="0999"]')
+    row.wait_for()
+    assert "QB 1016" in row.inner_text() and page.locator("#mapWrap").is_hidden()
+    assert page.locator("#layersFold").is_hidden()   # map-only panels step aside
+    assert page.is_hidden("#gotoText")
+    assert page.locator("#planner svg.planmap polyline").count() == 1   # the planned move, drawn
+    side = page.locator("#plSide").inner_text()
+    assert "Group B" in side and "Diplomacy" in side and "Goat" in side   # skills by group, full names; goods
+    assert "Elements" in page.locator('#plSide .skill[title*="Elements"]').get_attribute("title")
+    assert "Herded 1 per 20" in page.locator('#plSide .skill[title^="Goat"]').get_attribute("title")
+    page.click('#planner a.go[data-hex="QB 1016"]')   # back to the map, on that hex
+    page.locator("#mapWrap").wait_for(state="visible")
+    assert page.locator("#tabMap").get_attribute("class") == "on"
+    assert page.is_visible("#gotoText")
+
+
+def test_planner_calendar_explains_events(page):
+    page.click("#tabPlanner")
+    page.locator('#planner [data-ev="Seeking"]').click()
+    box = page.locator("#planner .evinfo")
+    assert "4263" in box.inner_text() and "month 1" in box.inner_text()
+    page.locator("#planner .evclose").click()
+    assert page.locator("#planner .evinfo").count() == 0
+
+
+def test_sidebar_exports_orders_from_the_planner(page):
+    from io import BytesIO
+    from openpyxl import load_workbook
+
+    assert page.is_visible("#exportWxx")
+    assert page.is_hidden("#exportOrders")
+    page.click("#tabPlanner")
+    assert page.is_hidden("#exportWxx")
+    page.locator(".pl-order-nav").get_by_role("button", name="Transfers").click()
+    page.get_by_role("spinbutton", name="Provision cap").fill("157321")
+    with page.expect_download() as result:
+        page.get_by_role("button", name="Export Orders (.xlsx)", exact=True).click()
+    download = result.value
+    assert download.suggested_filename == "0999_906_6_PlanPaste.xlsx"
+    with BytesIO(download.path().read_bytes()) as data:
+        workbook = load_workbook(data, read_only=True)
+        try:
+            assert [cell.value for cell in workbook["Transfers"][2][:5]] == ["0999", "0999", "PROVS", 157321, "BM"]
+            assert workbook["Tribe_Movement"]["F2"].value == "N"
+        finally:
+            workbook.close()
+    page.wait_for_selector("#exportOrdersStatus:has-text('Downloaded')")
+    page.click("#tabMap")
+    assert page.is_visible("#exportWxx")
+    assert page.is_hidden("#exportOrders")
+
+
+def test_transfer_buttons_add_draft_rows_without_recipients(page):
+    page.click("#tabPlanner")
+    page.locator(".pl-order-nav").get_by_role("button", name="Transfers").click()
+    for timing, phase in (("BM", "Before movement"), ("AM", "After movement")):
+        page.get_by_role("button", name=f"+ Add {timing} transfer", exact=True).click()
+        recipient = page.get_by_role("combobox", name=f"{phase} transfer 1 recipient")
+        assert recipient.input_value() == ""
+        assert recipient.locator("option").all_text_contents() == ["No clan recipient in range"]
+        assert page.get_by_role("spinbutton", name=f"{phase} transfer 1 quantity").is_visible()
+    page.click("#exportOrders")
+    page.wait_for_selector("#exportOrdersStatus:has-text('incomplete orders')")
+    assert page.locator('.pl-order-nav [data-pl-section="Review"]').get_attribute("aria-current") == "true"
+
+
+def test_planner_worker_shortcuts_and_output_estimate(page):
+    page.click("#tabPlanner")
+    page.locator("#plAddActivity").fill("Forestry")
+    page.get_by_role("button", name="Add activity", exact=True).click()
+    workers = page.get_by_role("spinbutton", name="Forestry workers")
+    page.get_by_role("button", name="Forestry: Add one worker").click()
+    page.get_by_role("button", name="Forestry: Add one worker").click()
+    page.get_by_role("button", name="Forestry: Remove one worker").click()
+    assert workers.input_value() == "1"
+    page.get_by_role("button", name="Forestry: Add half the remaining workers").click()
+    assert workers.input_value() == "1050"
+    page.get_by_role("button", name="Forestry: Add all remaining workers").click()
+    assert workers.input_value() == "2100"
+    workers.fill("20")
+    row = page.locator(".pl-activity-output")
+    row.locator("summary").click()
+    row.get_by_role("button", name="Add output", exact=True).click()
+    row.get_by_role("combobox", name="Forestry output 1 basis").select_option("per worker")
+    row.get_by_role("spinbutton", name="Forestry output 1 amount").fill("4")
+    assert row.locator("summary").inner_text() == "80 Log"

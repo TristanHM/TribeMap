@@ -317,6 +317,24 @@ def test_plan_variants_are_separate(conn, cfg, terrain):
         plans.add(conn, "906-06", "0999", "move", "N", variant="bad/name")
 
 
+def test_worksheet_archive_restores_orders_and_held_scouts(conn, cfg):
+    from tribemap import worksheet
+
+    turn, variant, unit = "906-06", "B", "0999"
+    plans.add(conn, turn, unit, "move", "N", variant=variant)
+    plans.add(conn, turn, unit, "scout", "N", variant=variant)
+    plans.add(conn, turn, unit, "move", "S", variant=variant)
+    worksheet.save(conn, turn, variant, unit, {"cap": 157000}, expected=0)
+    (_, _, archived), = plans.archive_and_clear(conn, cfg)
+    assert worksheet.drafts(conn, turn, variant) == {}
+    assert plans.load(conn, archived) == 1
+    assert worksheet.drafts(conn, turn, variant)[unit]["orders"] == {"cap": 157000}
+    assert plans.held_scouts(conn, turn, variant)[0]["orders"] == "N"
+    plans.resolve_scout(conn, turn, variant, unit, 1, restore=True)
+    assert not plans.held_scouts(conn, turn, variant)
+    assert len(plans.routes(conn, turn, variant)) == 2
+
+
 def test_new_turn_import_archives_and_clears_plans(cfg, terrain, sample_file):
     import json
     from tribemap.cli import main

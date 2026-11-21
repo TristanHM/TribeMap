@@ -50,7 +50,7 @@ def build(DIST=DIST):
 
     # the page: relative paths (so it works from any folder, e.g. GitHub Pages), and boot.js before app.js
     html = (PKG / "static" / "index.html").read_text(encoding="utf-8")
-    for name in ("style.css", "app.js"):
+    for name in ("style.css", "planner-transfers.js", "planner-orders.js", "app.js"):
         old = f'"/static/{name}"'
         assert html.count(old) == 1, name
         html = html.replace(old, f'"static/{name}?v={stamp((DIST / "static" / name).read_bytes())}"')

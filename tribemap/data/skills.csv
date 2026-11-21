@@ -1,0 +1,109 @@
+skill,group,short,limited,description,source
+Administration,B,Adm,,Elements: a tribe can have 1 per 2 levels of Administration (5 at most).,rules.md
+Admiralty,B,Admty,,,
+Agriculture,C,Agr,,,
+Alchemy,C,Alc,,,
+Apiarism,C,Api,,,
+Apiology,C,Apiol,,,
+Apothecary,B,Apoth,,,
+Archeology,C,Arch,,,
+Archery,B,Arc,,,
+Architecture,C,Archit,,,
+Armour,A,Arm,,"Makes armour (shields, helms, breastplates and more) from coal and bronze or iron.",Mandate 13.1.1
+Art,C,Art,,,
+Artillery,B,Artil,,,
+Astronomy,C,Astr,,,
+Atheism,B,Ath,,,
+Baking,C,Bak,yes,,
+Banking,C,Bank,,,
+Blubberwork,C,Blub,,,
+Bonework,A,BnW,,"Makes bone items: axes, spears, arrows, frames and more.",Mandate 13.1.3
+Boning,A,Bon,yes,"Takes the bones from slaughtered animals: each worker does 6 goats, 3 cattle or 2 horses for 12 bones. Can be combined with Skinning and Gutting.",Mandate 13.1.2
+Brick Making,C,Brk,yes,,
+Bureaucracy,C,Bur,,,
+Captaincy,B,Capt,,,
+Cheese Making,C,ChsM,,,
+Combat,B,Com,,,
+Cooking,C,Cook,yes,"Turns grain, grapes, honey or gut into provs: each cook makes 4 (6 with grain).",Mandate 13.1.4
+Courier,B,Cour,,"Couriers: +15 MP, can't scout; only one tribe in the clan may hold Courier.",rules.md
+Criminology,C,Crim,,,
+Culture,C,Cult,,,
+Curing,A,Cur,yes,Cures skins or furs into leather: each worker turns 2 into 2 leather using 5 gut.,Mandate 13.1.5
+Dancing,C,Dan,,,
+Diplomacy,B,Dip,,"How many tribes the clan can have: 1 per level of the clan's highest Diplomacy, and new tribes split from the tribe holding it. Dip 7 also gives Fair access.",rules.md (Discord; Scott)
+Distilling,C,Dis,,,
+Dressing,A,Dre,yes,Dresses skins or furs into leather: each worker turns 4 into 4 leather using 1 salt.,Mandate 13.1.6
+Economics,B,Eco,,Trade: Economics 5 (or 4 with a Trading Post) lets a tribe trade at the Fair.,rules.md
+Engineering,C,Eng,,"Builds structures: a Meeting House (Engineering 2, 100 logs) founds a village; more buildings at higher levels.","Mandate 13.1.19, 14.8"
+Excavation,A,Exc,yes,,
+Farming,C,Farm,,Farming crops; village only (needs a Meeting House).,Mandate 14.9; rules.md
+Firecontrol,C,Fire,,,
+Fishing,A,Fish,,"Fishing from a hex with a river, lake or ocean hexside: about 2.5 provs per worker at level 0, the same in every season; +5% a level.",rules.md (Discord)
+Flensing,C,Flen,,,
+Fletching,A,Flet,yes,"Makes arrows: each worker makes 10 from 10 coal and 1 bronze, iron or steel.",Mandate 13.1.7
+Forestry,A,For,yes,Fells logs or strips bark in forest or jungle: each worker 4 logs or 20 lb of bark. Logs can't be used the turn they're cut. Also covers charcoal making.,Mandate 13.1.9
+Furrier,A,Fur,,"A kind of hunting that keeps the hides: fewer provs than hunting, but skins and furs too. The mix depends on the season.",Mandate 13.1.10
+Garrison,B,Garr,,Garrisons: a tribe can have 1 per level.,rules.md
+Generalship,B,Gship,,,
+Geology,C,Geol,,,
+Glasswork,C,Gls,,"Makes glass items (beads, beakers and more) from sand, lead, coal and clay.",Mandate 13.1.11
+Gutting,A,Gut,yes,"Takes the gut from slaughtered animals: each worker does 6 goats, 3 cattle or 2 horses for 12 gut. Can be combined with Skinning and Boning.",Mandate 13.1.12
+Healing,B,Heal,,Heals wounded fighters after combat: one healer per 5 wounded; herbs help. Not entered as an activity.,Mandate 13.1.13
+Heavy Weapons,B,HvyW,,,
+Herbing,C,Hrb,,,
+Herding,A,Herd,,"Herders keep animals together and let them breed: 1 per 10 horses, cattle or dogs, or 20 goats. Unherded animals stray. Skill, season, weather and terrain set the breeding rate.",Mandate 13.1.14
+Horsemanship,B,Hor,,,
+Hunting,A,Hunt,,"Gathers provs: game, honey, fruit, roots and berries. The haul depends on hunters, skill, terrain, season and weather; traps and slings help.",Mandate 13.1.15
+Influence,B,Inf,,,
+Intelligence,B,Int,,"Gets information from locals; higher levels unlock more (nearest terrain or ore at 3, Rich Seeking hexes at 4 and 5, special hexes at 6, towns and cities at 9).",Mandate 13.1.16
+Jewellery,A,Jew,,"Makes trinkets, ornaments, goldwork and inlays; trinkets and ornaments sell at the Fair.",Mandate 13.1.17
+Leadership,B,Ldr,,,
+Leatherwork,A,Ltr,,"Makes leather goods: hoods, shields, slings, jerkins, backpacks (+30 lb carried), saddlebags, saddles, rope.",Mandate 13.1.18
+Literacy,C,Lit,,,
+Maintain Boats,C,MtnB,,,
+Mariner,B,Mar,,,
+Metalwork,A,Mtl,,"Makes metal tools and items from iron (or bronze or brass, with less coal).",Mandate 13.1.21
+Milking,A,Milk,,,
+Milling,C,Mil,yes,,
+Mining,A,Min,,"Mines a deposit in the unit's hex: coal, ores, salt, silver, gold and more. Miners can die, most of all in winter.",Mandate 13.1.22; rules.md
+Minting,C,Mint,,,
+Mobilisation,B,Mob,,,
+Music,C,Mus,,"Musical performance (it earns at the Fair) and making instruments, with Woodwork or Metalwork.",Mandate 13.1.23
+Navigation,B,Nav,,,
+Peeling,C,Peel,,,
+Politics,B,Pol,,,
+Pottery,A,Pot,yes,"Makes ewers, jars and urns from clay and coal.",Mandate 13.1.24
+Quarrying,A,Qry,yes,Quarries stone in hills and mountains: each worker 5 stones (double with mattocks).,Mandate 13.1.25
+Raiding,B,Raid,,,
+Refining,C,Ref,yes,Refining ore into metal; village only (needs a Meeting House).,Mandate 14.12; rules.md
+Religion,B,Rel,,,
+Research,C,Res,,,
+Rowing,B,Row,,,
+Sailing,B,Sail,,,
+Salting,A,Salt,yes,"With salt, turns fish into provs that keep.",rules.md (Scott)
+Sanitation,C,San,,,
+Scouting,B,Sct,,"Doesn't add range: it cuts scout losses (Scouting 6 all but stops them), helps evade Security and raises Seeking returns.",rules.md (Discord)
+Seamanship,B,Sea,,,
+Security,B,Sec,,,
+Seeking,C,Seek,,"Raises returns from Seeking, the warriors' search for goods, animals and recruits each month 1.",Mandate 13.1.26
+Sewing,A,Sew,,"Makes sewn goods: bladders, mail, fur jackets and coats, curtains.",Mandate 13.1.28
+Shearing,C,Shr,,,
+Shipbuilding,C,ShB,,,
+Shipwright,B,ShW,yes,,
+Siege Equipment,A,Seq,,"Makes siege equipment: rams, ballistas, onagers, catapults.",Mandate 13.1.29
+Skinning,A,Skn,yes,"Skins slaughtered animals: each worker does 3 goats, 1 cattle or 1 horse (1, 2 or 3 skins each). The animals' provs are gained too.",Mandate 13.1.30
+Slavery,B,Slv,,Handling slaves: slaves work as actives but need overseers (1 warrior per 10 at Slavery 0) or they may flee.,Mandate 13.1.31; rules.md
+Spying,B,Spy,,,
+Stonework,C,Stn,,Makes stone items and buildings from quarried stone.,Mandate 13.1.32
+Supervision,B,Super,,,
+Tactics,B,Tac,,,
+Tanning,A,Tan,yes,Tans skins or furs into leather using bark: 10 workers per level make 40 leather with 100 bark.,Mandate 13.1.33
+Torture,B,Tor,,,
+Triball,B,Tri,,"Triball at the Fair (up to 800 warriors) and the month-12 League, both earn silver.",rules.md
+Understanding,B,Und,,,
+Waxwork,A,Wax,,"Makes parchment, candles and cuirboilli from wax, skins and cotton.",Mandate 13.1.34
+Weapons,A,Wpn,,"Makes weapons (shafts, spears, swords, bows and more) from coal and metal.",Mandate 13.1.35
+Weaving,A,Wv,,"Makes rope, nets, snares (help fishing), cloth and carpets.",Mandate 13.1.36
+Whaling,A,Wha,,,
+Woodwork,A,Wd,,"Makes wooden goods: clubs (no logs needed in forest or jungle), paddles, rakes, wagons.",Mandate 13.1.37
+Zoology,C,Zool,,,

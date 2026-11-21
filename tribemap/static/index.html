@@ -12,12 +12,18 @@
   <header>
     <h1>TribeMap</h1>
     <span id="clan" class="muted"></span>
+    <nav class="tabs" role="tablist">
+      <button type="button" id="tabMap" role="tab" title="The map: what we know, and the plan's moves and scout routes">Map</button>
+      <button type="button" id="tabPlanner" role="tab" title="TribePlanner: each tribe and element as it starts the planned turn: where it is, what it has, what the plan has it doing, and checks">Planner</button>
+    </nav>
     <a id="guideLink" class="guide" href="guide/" target="_blank" rel="noopener" title="How to use TribeMap: a step-by-step guide" hidden>Guide</a>
     <div class="hbtns">
       <button id="importBtn" title="Import turn reports (.docx) from the GM's emails, or .wxx maps: pick one or several, or drop them on the page">Import (.docx/.wxx)</button>
       <button id="importDirBtn" title="Import every turn report (files named like 0999_906_05_Results.docx) and .wxx map in a folder and the folders inside it">Folder (.docx/.wxx)</button>
-      <button id="exportWxx" title="Save the map as shown as a .wxx file that Clan Cartographer and Worldographer can open (known hexes, plus others' info, rivers and resources if those layers are on; never our units or plans)">Export Map (.wxx)</button>
+      <button id="exportWxx" class="maponly" title="Save the map as shown as a .wxx file that Clan Cartographer and Worldographer can open (known hexes, plus others' info, rivers and resources if those layers are on; never our units or plans)">Export Map (.wxx)</button>
+      <button id="exportOrders" class="planneronly" title="Download a paste-in Excel workbook for the selected plan">Export Orders (.xlsx)</button>
     </div>
+    <div id="exportOrdersStatus" class="planneronly muted" role="status" hidden></div>
     <input type="file" id="importFile" accept=".docx,.txt,.wxx" multiple hidden>
     <input type="file" id="importDir" webkitdirectory hidden>
   </header>
@@ -47,19 +53,21 @@
       </div>
       <div id="newPlanErr" class="warn"></div>
     </form>
-    <form id="goto">
+    <form id="goto" class="maponly">
       <input id="gotoText" placeholder="Go to hex or unit (QB 1016, 1999)" autocomplete="off">
     </form>
   </section>
 
-  <section>
+  <section id="plSide" class="planneronly"></section>
+
+  <section class="maponly">
     <details id="layersFold" class="fold" open>
       <summary><h2>Layers</h2></summary>
       <div id="layers" class="layers"></div>
     </details>
   </section>
 
-  <section id="historyBox" hidden>
+  <section id="historyBox" class="maponly" hidden>
     <details id="historyFold" class="fold" open>
       <summary><h2>History</h2></summary>
       <label class="inline check"><input type="checkbox" id="histOn"> Show where units have been</label>
@@ -71,7 +79,7 @@
     </details>
   </section>
 
-  <section id="editBox" hidden>
+  <section id="editBox" class="maponly" hidden>
     <h2>Edit plan <span id="editTurn"></span></h2>
     <div id="planMsg" class="msg" hidden></div>
     <div id="editIdle">
@@ -124,12 +132,12 @@
     </form>
   </section>
 
-  <section id="detailBox">
+  <section id="detailBox" class="maponly">
     <h2>Hex</h2>
     <div id="detail" class="muted">Click a hex for everything known about it.</div>
   </section>
 
-  <section id="planBox" hidden>
+  <section id="planBox" class="maponly" hidden>
     <h2>Plan <span id="planTitle"></span>
       <button type="button" id="deletePlan" class="rowbtn danger" title="Delete this plan (two clicks)">Delete plan</button></h2>
     <div id="planSummary"></div>
@@ -146,7 +154,7 @@
     <p id="backupNote" class="muted" hidden></p>
   </section>
 
-  <section>
+  <section class="maponly">
     <details id="legendFold" class="fold" open>
       <summary><h2>Legend</h2></summary>
       <div id="legend"></div>
@@ -286,6 +294,12 @@
   <div id="status" class="muted"></div>
 </main>
 
+<main id="plannerWrap" hidden>
+  <div id="planner"></div>
+</main>
+
+<script src="/static/planner-transfers.js"></script>
+<script src="/static/planner-orders.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

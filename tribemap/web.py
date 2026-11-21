@@ -8,6 +8,7 @@ Endpoints:
     GET    /api/map?as_of=T&plan=P   hexes, hexsides, our units, reported paths (plan widens the drawn area)
     GET    /api/hex/{label}?as_of=   everything known about one hex (as `tn hex --json`)
     GET    /api/plan/{turn}?as_of=   simulated routes + coverage (as `tn plan show --json`)
+    GET    /api/planner/{turn}       the Planner tab: each unit's sheet for the plan (unitsheet.sheets)
     POST   /api/plan/{turn}/preview  simulate with the editor's unsaved route (nothing is saved)
     POST   /api/plan/{turn}/route    save a route (like `tn plan add`); body may name the route it replaces
     DELETE /api/plan/{turn}/route    remove a route: ?unit=&kind=&party=
@@ -22,13 +23,14 @@ Writes are only accepted as JSON from this page (same origin, local host), so ot
 browser can't change the plan.
 """
 import time
+from contextlib import closing
 from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import coords, db, importer, plans, project, queries, wxx
+from . import coords, db, importer, plans, project, queries, unitsheet, worksheet, wxx
 from .icons import ICONS
 from .planner import FOLLOW, IMPASSABLE, simulate
 from .render import side
@@ -162,6 +164,7 @@ def plan_payload(conn, terrain, cfg, turn, as_of=None, draft=None, replace=None,
     overlap = [{"id": label, "x": centre(coords.parse(label))[0], "y": centre(coords.parse(label))[1],
                 "routes": names} for label, names in cov["scout_overlap"].items()]
     return {"turn": plans.check_turn(turn), "variant": plans.check_variant(variant), "routes": routes,
+            "planned_units": sorted(plans.creations(conn, plans.check_turn(turn), variant)),
             "overlap": overlap,
             "coverage": {k: v for k, v in cov.items() if not k.startswith("_")}}, planned
 
@@ -302,7 +305,9 @@ def create_app(cfg, project_open=None):
     """project_open: how to switch to a loaded project file (the browser-only version passes one; it reloads its
     settings). Without it, Open project is refused: on a desktop copy it would replace the live DB."""
     terrain = TerrainTable(cfg.terrain_csv)
-    db.connect(cfg.db_path).close()   # make sure the DB exists and is migrated
+    with closing(db.connect(cfg.db_path)) as connection:
+        if project_open is not None:
+            importer.fill_saved_planner_fields(connection, cfg, terrain)
     app = FastAPI(title="Tribemap", docs_url="/api/docs")
 
     def conn():
@@ -382,6 +387,14 @@ def create_app(cfg, project_open=None):
         finally:
             c.close()
 
+    @app.get("/api/planner/{turn}")
+    def planner_(turn: str, variant: str = plans.MAIN):
+        c = conn()
+        try:
+            return guard(lambda: unitsheet.sheets(c, terrain, cfg, turn, variant))
+        finally:
+            c.close()
+
     # --- writes (plan editing) ----------------------------------------------------
 
     last_backup = [0.0]
@@ -393,6 +406,96 @@ def create_app(cfg, project_open=None):
         if time.time() - last_backup[0] > BACKUP_EVERY:
             db.backup(c, cfg.backup_dir, cfg.keep_backups)
             last_backup[0] = time.time()
+
+    @app.put("/api/planner/{turn}/worksheet/{unit}")
+    def save_worksheet(turn: str, unit: str, body: dict = Body(...), variant: str = plans.MAIN):
+        c = write_conn()
+        try:
+            revision = guard(lambda: worksheet.save(c, plans.check_turn(turn), plans.check_variant(variant),
+                                                   unit, body.get("orders"), body.get("revision")))
+            after_write(c)
+            return {"revision": revision}
+        finally:
+            c.close()
+
+    @app.get("/api/planner/{turn}/review")
+    def review_worksheet(turn: str, variant: str = plans.MAIN):
+        c = conn()
+        try:
+            return guard(lambda: plans.review(c, turn, variant))
+        finally:
+            c.close()
+
+    @app.post("/api/planner/{turn}/export")
+    def export_worksheet(turn: str, body: dict = Body(...), variant: str = plans.MAIN):
+        import json
+        import tempfile
+
+        c = write_conn()
+        try:
+            def run():
+                t, v = plans.check_turn(turn), plans.check_variant(variant)
+                c.execute("BEGIN IMMEDIATE")
+                review = plans.review(c, t, v)
+                if body.get("digest") != review["digest"]:
+                    raise HTTPException(409, "The plan changed. Refresh Review before exporting.")
+                if review["issues"]:
+                    issue = review["issues"][0]
+                    raise ValueError(f"{issue['unit']} · {issue['message']}")
+                with tempfile.TemporaryDirectory() as tmp:
+                    xlsx, snapshot, _ = plans.export(c, cfg, t, outdir=tmp, variant=v)
+                    payload = xlsx.read_bytes()
+                    estimates = body.get("estimates", {})
+                    if not isinstance(estimates, dict) or len(estimates) > 100 or any(
+                        not worksheet.unit_id(unit) or not isinstance(values, dict) or
+                        any(key not in ("Provs", "Horse", "Log") or not worksheet.quantity(value)
+                            for key, value in values.items()) for unit, values in estimates.items()
+                    ):
+                        raise ValueError("Invalid export estimates")
+                    worksheet.record_export(c, t, v, {"plan": json.loads(snapshot.read_text(encoding="utf-8")),
+                                                       "sheets": review["sheets"], "estimates": estimates})
+                return Response(payload, media_type=XLSX,
+                                headers={"Content-Disposition": f'attachment; filename="{xlsx.name}"'})
+            return guard(run)
+        finally:
+            c.close()
+
+    @app.post("/api/planner/{turn}/create-unit")
+    def create_planned_unit(turn: str, body: dict = Body(...), variant: str = plans.MAIN):
+        c = write_conn()
+        try:
+            def run():
+                data = unitsheet.sheets(c, terrain, cfg, turn, variant)
+                unit, source = body.get("unit"), body.get("from")
+                if not worksheet.unit_id(unit) or (len(unit) > 4 and unit[4] != "e"):
+                    raise ValueError("Use a tribe ID or an element ID such as 0999e1")
+                parent = next((u for u in data["units"] if u["unit"] == source and not u["new"]), None)
+                if not parent or parent["kind"] != "Tribe" or not parent["where"] or source[1:4] != unit[1:4]:
+                    raise ValueError("Choose a reported tribe in the same clan with a known hex")
+                if len(unit) > 4 and unit[:4] != source:
+                    raise ValueError("An element ID must begin with its tribe ID")
+                if any(u["unit"] == unit and (not u["new"] or u.get("creation")) for u in data["units"]):
+                    raise ValueError("This unit already exists in the plan")
+                orders = data["worksheet"].get(unit, {})
+                content = dict(orders.get("orders", {}), creation={"from": source, "name": body.get("name", "")})
+                worksheet.save(c, data["turn"], data["variant"], unit, content, orders.get("revision", 0))
+                after_write(c)
+                return {"unit": unit}
+            return guard(run)
+        finally:
+            c.close()
+
+    @app.post("/api/planner/{turn}/scout-review")
+    def scout_review(turn: str, body: dict = Body(...), variant: str = plans.MAIN):
+        c = write_conn()
+        try:
+            def run():
+                plans.resolve_scout(c, turn, variant, body.get("unit"), body.get("party"), body.get("restore") is True)
+                after_write(c)
+                return {"ok": True}
+            return guard(run)
+        finally:
+            c.close()
 
     @app.post("/api/plan/{turn}/preview")
     def preview(turn: str, body: dict = Body(...), as_of: str | None = None, variant: str = plans.MAIN):
@@ -560,6 +663,9 @@ def create_app(cfg, project_open=None):
                 if any(t == plans.check_turn(turn) and v == to for t, v in plans.variants(c)):
                     raise ValueError(f"plan {to} already exists for {turn}")
                 n = plans.copy_plan(c, turn, body["from"], to) if body.get("from") else 0
+                if not body.get("from"):
+                    plans.register(c, turn, to)
+                    c.commit()
                 after_write(c)
                 return {"turn": plans.check_turn(turn), "variant": to, "copied": n}
             return guard(run)
@@ -612,7 +718,7 @@ def create_app(cfg, project_open=None):
         # Version the page's script and stylesheet by their modification time, so after an update the browser
         # fetches the new files instead of running a cached copy (a normal refresh doesn't always re-check them).
         html = (STATIC / "index.html").read_text(encoding="utf-8")
-        for name in ("app.js", "style.css"):
+        for name in ("app.js", "planner-orders.js", "planner-transfers.js", "style.css"):
             version = int((STATIC / name).stat().st_mtime)
             html = html.replace(f"/static/{name}", f"/static/{name}?v={version}")
         return HTMLResponse(html, headers={"Cache-Control": "no-cache"})

@@ -7,7 +7,7 @@ import sqlite3
 import time
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 7
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS unit_turn (
     unit TEXT NOT NULL, turn TEXT NOT NULL, source_id INTEGER REFERENCES source(id) ON DELETE CASCADE,
     gx INTEGER, gy INTEGER, prev_gx INTEGER, prev_gy INTEGER, hex_text TEXT,
     status TEXT, inventory_json TEXT, skills_json TEXT, morale TEXT,
+    carry_json TEXT,                 -- weight, walking, mounted (carrying capacity) at the end of the turn
+    goods_tribe TEXT,
+    activities TEXT, transfers_json TEXT, notes_json TEXT, final TEXT,   -- what the report says it did
     PRIMARY KEY (unit, turn)
 );
 CREATE TABLE IF NOT EXISTS unit_path (
@@ -84,6 +87,25 @@ CREATE TABLE IF NOT EXISTS plan (
     PRIMARY KEY (turn, variant)
 );
 
+CREATE TABLE IF NOT EXISTS plan_worksheet (
+    turn TEXT NOT NULL, variant TEXT NOT NULL, unit TEXT NOT NULL, data TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (turn, variant, unit),
+    FOREIGN KEY (turn, variant) REFERENCES plan ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS plan_export (
+    turn TEXT NOT NULL, variant TEXT NOT NULL, digest TEXT NOT NULL, exported_at TEXT NOT NULL,
+    snapshot TEXT NOT NULL,
+    PRIMARY KEY (turn, variant, digest)
+);
+
+CREATE TABLE IF NOT EXISTS plan_scout_review (
+    turn TEXT NOT NULL, variant TEXT NOT NULL, unit TEXT NOT NULL, party INTEGER NOT NULL, data TEXT NOT NULL,
+    PRIMARY KEY (turn, variant, unit, party),
+    FOREIGN KEY (turn, variant) REFERENCES plan ON DELETE CASCADE
+);
+
 -- Sharing (phase 5): what was given to whom.
 CREATE TABLE IF NOT EXISTS share_log (
     id INTEGER PRIMARY KEY, recipient TEXT, given_at TEXT, region TEXT, turn_cutoff TEXT,
@@ -109,7 +131,10 @@ def connect(path, readonly=False):
 
 def _migrate(conn):
     """Bring an older database up to the current schema (columns added since version 1)."""
-    added = {"observation": ["received_at TEXT"], "plan_route": ["start_hex TEXT", "mover TEXT", "variant TEXT NOT NULL DEFAULT 'main'"]}
+    added = {"observation": ["received_at TEXT"],
+             "plan_route": ["start_hex TEXT", "mover TEXT", "variant TEXT NOT NULL DEFAULT 'main'"],
+             "unit_turn": ["carry_json TEXT", "activities TEXT", "transfers_json TEXT", "notes_json TEXT", "final TEXT",
+                           "goods_tribe TEXT"]}
     for table, columns in added.items():
         have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
         for col in columns:

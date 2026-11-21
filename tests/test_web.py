@@ -24,6 +24,84 @@ def test_page_and_static(client):
     assert client.get("/static/app.js").status_code == 200
 
 
+@pytest.mark.parametrize("report_on_device", [True, False])
+def test_existing_browser_map_gets_planner_fields(cfg, terrain, sample_file, report_on_device):
+    raw_report = sample_file.read_bytes()
+    with db.connect(cfg.db_path) as conn:
+        source_id, _, _ = importer.import_report(conn, cfg, terrain, sample_file)
+        importer.add_correction(conn, cfg, hex="QB 2005", kind="terrain", value="GH")
+        plans.add(conn, "906-06", "0999", "move", "N")
+        plans.set_unit_mover(cfg, "0999", "mounted")
+        observations = conn.execute("SELECT COUNT(*) FROM observation").fetchone()[0]
+        conn.execute("UPDATE unit_turn SET carry_json = NULL, activities = NULL")
+
+    if not report_on_device:
+        sample_file.unlink()
+    create_app(cfg, project_open=lambda info: None)
+    if not report_on_device:
+        with db.connect(cfg.db_path) as conn:
+            result = importer.import_upload(conn, cfg, terrain, sample_file.name, raw_report)
+            assert result["skipped"]
+
+    with db.connect(cfg.db_path, readonly=True) as conn:
+        row = conn.execute("SELECT source_id, carry_json, activities FROM unit_turn WHERE unit = '0999'").fetchone()
+        assert row["source_id"] == source_id
+        assert '90500' in row["carry_json"]
+        assert "40 people hunted 90 provs" in row["activities"]
+        assert conn.execute("SELECT COUNT(*) FROM observation").fetchone()[0] == observations
+        assert conn.execute("SELECT orders FROM plan_route WHERE turn = '906-06'").fetchone()[0] == "N"
+        assert plans.unit_movers(cfg) == {"0999": "mounted"}
+
+
+def test_worksheet_save_copy_and_review_snapshot(client):
+    from io import BytesIO
+    from openpyxl import load_workbook
+
+    path = "/api/planner/906-06"
+    order = {"rows": [["Hunting", 40, 2, {"implements": [["Trap", 10]]}]], "cap": 157000,
+             "skills": ["Economics"], "gm": ["=Literal text"], "comments": ["Test note"]}
+    saved = client.put(path + "/worksheet/0999", json={"revision": 0, "orders": order})
+    assert saved.json() == {"revision": 1}
+    assert client.put(path + "/worksheet/0999", json={"revision": 0, "orders": {}}).status_code == 400
+    copy = client.post("/api/plan/906-06/copy", json={"from": "main", "to": "B"})
+    assert copy.status_code == 200
+    assert client.get(path + "?variant=B").json()["worksheet"]["0999"]["orders"] == order
+    review = client.get(path + "/review?variant=B").json()
+    assert not review["issues"]
+    sheets = {sheet["name"]: sheet for sheet in review["sheets"]}
+    assert sheets["Transfers"]["rows"][0][:5] == ["0999", "0999", "PROVS", 157000, "BM"]
+    assert sheets["Tribes_Activities"]["rows"][0][-2:] == ["TRAP", 10]
+    result = client.post(path + "/export?variant=B", json={"digest": review["digest"]})
+    assert result.status_code == 200
+    workbook = load_workbook(BytesIO(result.content), read_only=True)
+    try:
+        assert workbook["Transfers"]["D2"].value == 157000
+        assert workbook["GM Actions"]["B2"].value == "=Literal text"
+        assert workbook["GM Actions"]["B2"].data_type == "s"
+    finally:
+        workbook.close()
+    assert client.get(path + "/review?variant=B").json()["exported_at"]
+    changed = client.put(path + "/worksheet/0999?variant=B", json={"revision": 1, "orders": {**order, "cap": 160000}})
+    assert changed.json() == {"revision": 2}
+    assert client.get(path + "/review?variant=B").json()["changed"]
+    assert client.post(path + "/export?variant=B", json={"digest": review["digest"]}).status_code == 409
+    assert client.get(path).json()["worksheet"]["0999"]["orders"]["cap"] == 157000
+
+
+def test_planned_element_can_receive_stock_and_scout(client):
+    path = "/api/planner/906-06"
+    result = client.post(path + "/create-unit", json={"unit": "0999e1", "from": "0999", "name": "Supply"})
+    assert result.status_code == 200, result.text
+    data = client.get(path).json()
+    unit = next(unit for unit in data["units"] if unit["unit"] == "0999e1")
+    assert unit["new"] and unit["name"] == "Supply"
+    assert unit["transfer_neighbours"]["BM"]["0999"]["kind"] == "Same hex"
+    review = client.get(path + "/review").json()
+    auto = next(sheet for sheet in review["sheets"] if sheet["name"] == "Auto-GM")
+    assert auto["paste_at"] == "B3"
+    assert auto["rows"] == [["0999", "Create Unit", "BM", "0999e1", "Current"]]
+
+
 def test_meta(client):
     m = client.get("/api/meta").json()
     assert m["latest_turn"] == "906-05" and m["turns"] == ["906-05"] and m["plan_turns"] == ["906-06"]

@@ -47,11 +47,19 @@ RE_SEEN = re.compile(rf"^(?P<code>[A-Za-z]+)\s+(?P<dirs>{DIR}(?:\s+{DIR})*)$")
 RE_UNIT_ID = re.compile(r"^\d{4}(?:[a-z]\d+)?$")
 RE_NOTHING = re.compile(r"^Nothing of interest found$", re.I)
 RE_SKILL = re.compile(r"^([A-Za-z&]+)\s+(\d+)$")
+# what the unit carries, at the end of the turn: 'Weight: 1,550,746', 'Walking CC: <tabs> 1,944,120'
+RE_CARRY = re.compile(r"^(?P<what>Weight|Walking CC|Mounted CC)\s*:\s*(?P<n>[\d,]+)$")
+CARRY_KEYS = {"Weight": "weight", "Walking CC": "walking", "Mounted CC": "mounted"}
+# what the unit did: 'Tribe Activities, 54 people hunted ...', 'Transfer goods to 0999e1: ...', the GM's notes
+RE_ACTIVITIES = re.compile(r"^(?:Tribe|Element|Clan|Garrison|Fleet|Courier) Activities\s*,?\s*(?P<text>.*)$")
+RE_FINAL = re.compile(r"^Final Activities\s*:\s*(?P<text>.*)$")
+RE_TRANSFER = re.compile(r"^(?:Transfer goods to|Receive goods from)\s+\S+\s*:")
+RE_GM_NOTE = re.compile(r"^Chief,\s*(?P<text>.+)$")
 
 INVENTORY_SECTIONS = {"Humans", "Animals", "Minerals", "War Equipment", "Finished Goods",
-                      "Raw Materials", "Ships"}
+                      "Raw Materials", "Ships", "Structures", "Buildings"}
 # Lines we recognise and deliberately ignore (prefix match).
-IGNORED = ("Received:", "Goods Tribe:", "Desired Commodities:", "Turn Timing", "Movement Weight:")
+IGNORED = ("Received:", "Desired Commodities:", "Turn Timing", "Movement Weight:")
 # Deposits a status line may list in mixed case ('PRAIRIE, Salt, 0999'); anything ending in 'ore' is one too.
 RESOURCES = {"SALT", "COAL", "STONE", "JADE", "DIAMONDS", "GEMS", "FRANKINCENSE"}
 # Words that make an unrecognised line worth a look.
@@ -94,6 +102,12 @@ class UnitReport:
     skills: dict = field(default_factory=dict)
     morale: str = ""
     paths: dict = field(default_factory=dict)  # party -> [Step]
+    carry: dict = field(default_factory=dict)  # weight, walking, mounted: at the end of the turn
+    activities: str = ""                       # the report's activities line, as written
+    final: str = ""                            # 'Provs eaten: 90 Provs'
+    goods_tribe: str | None = None
+    transfers: list = field(default_factory=list)   # 'Transfer goods to 0999e1: 10 WARRIORS, ...'
+    notes: list = field(default_factory=list)  # the GM's notes to the chief
 
 
 @dataclass
@@ -156,6 +170,25 @@ class Parser:
                 continue
             if m := RE_STATUS.match(line):
                 self._status(r, unit, m["text"], n, line, unparsed)
+                continue
+            if m := RE_CARRY.match(line):
+                unit.carry[CARRY_KEYS[m["what"]]] = int(m["n"].replace(",", ""))
+                continue
+            if m := RE_ACTIVITIES.match(line):
+                unit.activities = m["text"].strip().rstrip(",").strip()
+                continue
+            if m := RE_FINAL.match(line):
+                unit.final = m["text"].strip().rstrip(",").strip()
+                continue
+            if RE_TRANSFER.match(line):
+                unit.transfers.append(line.rstrip(", "))
+                continue
+            if m := RE_GM_NOTE.match(line):
+                unit.notes.append(m["text"].strip())
+                continue
+            if line.startswith("Goods Tribe:"):
+                identifier = re.search(r"\b\d{4}(?:[a-z]\d+)?\b", line.split(":", 1)[1])
+                unit.goods_tribe = identifier[0] if identifier else None
                 continue
             if line in INVENTORY_SECTIONS:
                 section = line

@@ -1,0 +1,19 @@
+goods,note,source
+PROVS,Food: each person eats 1 prov a turn.,rules.md
+SKIN,"Furs can be cured, dressed or tanned in place of skins.",Mandate 13.1.5-6; 13.1.33
+FUR,"Cured, dressed or tanned into leather like skins.",Mandate 13.1.5-6; 13.1.33
+SALT,"With Salting, turns fish into provs that keep.",rules.md (Scott)
+LEATHER,"Backpacks add 30 lb to a warrior's or active's load; saddlebags add 100 lb to a horse (50 when scouting).",Mandate 13.1.18
+BONES,Bones also serve as auction bids.,Discord (Jeff Perkins)
+LOG,Logs can't be used the turn they're cut. A Meeting House (100 logs) founds a village.,Mandate 13.1.9; 13.1.19
+IRON,Bronze or brass can replace iron in Metalwork with 75% of the coal.,Mandate 13.1.21
+BRONZE,Can replace iron in Metalwork with 75% of the coal.,Mandate 13.1.21
+BRASS,Can replace iron in Metalwork with 75% of the coal.,Mandate 13.1.21
+SILVER,"Pays skill teachers (300 × level), the Tinker and auction bids.",Mandate 12.3; rules.md
+TRAP,Each hunter can use up to 5 traps.,Mandate 13.1.21
+CLUB,Triball: +0.5 per club at the Fair. A weapon.,rules.md
+WAGON,"Carries 2,000 lb net; pulled by 2 cattle or horses (cattle first).",rules.md (Mandate 11.1.1); Mandate 13.1.37
+HORSE,"Carrying: 300 lb unridden, 100 lb ridden. Triball: +1 per horse. Herded 1 per 10.",rules.md (Mandate 11.1.1)
+GOAT,"Herded 1 per 20; only goats breed in winter. Killed, a goat gives 4 provs.",Mandate 13.1.14; 3.15
+CATTLE,"Herded 1 per 10; pull wagons first. Killed, a cow gives 20 provs.",Mandate 13.1.14; 3.15; rules.md
+JERKIN,Armour in its own right.,Mandate 13.1.18
