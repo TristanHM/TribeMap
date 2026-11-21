@@ -124,6 +124,16 @@ function nextTurn(t) {
   return `${y}-${String(m).padStart(2, "0")}`;
 }
 
+function selectDefaultPlannerPlan() {
+  if (state.tab !== "planner" || state.planTurn || !state.meta) return false;
+  const turn = nextTurn(state.meta.latest_turn) || state.meta.plan_turns?.at(-1);
+  if (!turn) return false;
+  // Saved plans are listed with main first within each turn.
+  const existing = state.meta.plans?.find((plan) => plan.turn === turn);
+  setPlan(turn, existing?.variant);
+  return true;
+}
+
 // ---------- loading ----------
 async function loadAll(keepView) {
   try {
@@ -135,6 +145,7 @@ async function loadAll(keepView) {
     backupNote();
     buildIcons(state.meta.icons || {});
     buildWorld(state.meta.world);
+    selectDefaultPlannerPlan();
     fillSelects();
     fillHistory();
     await Promise.all([refreshMap(), loadHistory()]);
@@ -2337,7 +2348,7 @@ async function importFiles(files) {
   }
   // reports oldest turn first, then maps (they have no turn)
   ups.sort((a, b) => (a.check.turn || "~").localeCompare(b.check.turn || "~", undefined, { numeric: true }));
-  let done = 0;
+  let done = 0, advancedTurn = false;
   for (const up of ups) {
     info.innerHTML = `<p class="muted">Importing ${esc(up.filename)} (${++done} of ${ups.length})…</p>`;
     if (up.check.replaces_different_file) {
@@ -2352,7 +2363,10 @@ async function importFiles(files) {
         : d.map ? `map: ${d.hexes} hexes, ${d.rivers} river sides` + (d.own ? "" : ", as other players' information")
         : `turn ${esc(d.turn)}, ${d.observations ?? 0} facts`;
       if (d.archived && d.archived.length) h += `; archived plans ${d.archived.map((a) => esc(a.plan)).join(", ")}`;
-      if (d.next_plan) h += `; plan ${esc(d.next_plan)} ready to fill in`;
+      if (d.next_plan) {
+        advancedTurn = true;
+        h += `; plan ${esc(d.next_plan)} ready to fill in`;
+      }
       if (d.unparsed && d.unparsed.length) {
         h += `<p class="warn">${d.unparsed.length} map line(s) TribeMap couldn't place on the map (anything named is kept as a special hex):</p>
           <ul>${d.unparsed.map((u) => `<li><span class="unp">line ${u.line}: ${esc(u.text)}</span><br><span class="muted">${esc(u.reason)}</span></li>`).join("")}</ul>`;
@@ -2365,7 +2379,7 @@ async function importFiles(files) {
   info.innerHTML = `<p><b>Import</b></p><ul class="imports">${out.join("")}</ul>`;
   $("importDone").hidden = false;
   importing = false;
-  setPlan("", "main");   // after an import, show the map itself
+  if (advancedTurn) setPlan("", "main");   // a new turn archives the old plans
   await loadAll(false);
 }
 
@@ -2582,8 +2596,11 @@ function showTab(tab, load = true) {
   $("tabPlanner").classList.toggle("on", planner);
   $("mapWrap").hidden = planner;
   $("plannerWrap").hidden = !planner;
-  if (planner) { if (load) loadPlanner(); }
-  else if (state.map) drawAll();   // drawn while hidden: draw again now it has its size
+  if (planner && load && state.meta) {
+    if (selectDefaultPlannerPlan()) loadAll(true);
+    else loadPlanner();
+  }
+  if (!planner && state.map) drawAll();   // drawn while hidden: draw again now it has its size
 }
 async function loadPlanner() {
   if (!state.planTurn) {

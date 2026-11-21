@@ -419,6 +419,44 @@ def test_planner_tab(page):
     assert page.is_visible("#gotoText")
 
 
+def test_planner_picks_next_turn_and_retains_plan_across_tabs(page):
+    picker = page.locator("#plan")
+    picker.select_option("")
+    page.click("#tabPlanner")
+    page.wait_for_selector("#planner .plhead .title:text-is('Plan 906-06')")
+    assert picker.input_value() == "906-06|main"
+    page.click("#tabMap")
+    assert picker.input_value() == "906-06|main"
+    assert page.is_visible("#planBox")
+
+    picker.select_option("__new")
+    page.fill("#newPlanName", "B")
+    page.locator("#newPlan button[type=submit]").click()
+    page.wait_for_selector("#planTitle:text-is('906-06 · B')")
+    page.click("#tabPlanner")
+    page.wait_for_selector("#planner .plhead .title:text-is('Plan 906-06 · B')")
+    page.evaluate("history.replaceState(null, '', location.pathname)")
+    page.reload()
+    page.wait_for_selector("#planner .plhead .title:text-is('Plan 906-06 · B')")
+    assert picker.input_value() == "906-06|B"
+
+    with page.expect_response(lambda response: response.url.endswith("/api/planner/906-06?variant=B")):
+        page.set_input_files("#importFile", {
+            "name": "0999_906_05_Results.txt", "mimeType": "text/plain", "buffer": SAMPLE.encode(),
+        })
+    page.locator("#importDone").click()
+    assert picker.input_value() == "906-06|B"
+
+    later = SAMPLE.replace("Next Turn 906-06 (#78)", "Next Turn 906-07 (#79)").replace(
+        "Current Turn 906-05 (#77)", "Current Turn 906-06 (#78)")
+    page.set_input_files("#importFile", {
+        "name": "0999_906_06_Results.txt", "mimeType": "text/plain", "buffer": later.encode(),
+    })
+    page.locator("#importDone").click()
+    page.wait_for_selector("#planner .plhead .title:text-is('Plan 906-07')")
+    assert picker.input_value() == "906-07|main"
+
+
 def test_planner_calendar_explains_events(page):
     page.click("#tabPlanner")
     page.locator('#planner [data-ev="Seeking"]').click()
